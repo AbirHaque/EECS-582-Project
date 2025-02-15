@@ -1,4 +1,9 @@
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 from common import db_path, init_database, logger
 import threading
 import service_ingestion
