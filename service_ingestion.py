@@ -1,45 +1,162 @@
 from common import app, db, logger, Article, Topic, ArticlesTopics, init_database, db_path
 from datetime import datetime, timezone
-import os, feedparser
+import os, feedparser, requests
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sentence_transformers import SentenceTransformer
 import chromadb
+from abc import ABC, abstractmethod
+from typing import List
 from message_bus import send_message
 
-RSS_FEEDS = [
-    'https://moxie.foxnews.com/google-publisher/latest.xml',
-    'https://feeds.feedburner.com/ndtvnews-world-news',
-    'https://www.theguardian.com/world/rss'
-]
+class IngestionStrategy(ABC):
 
-def ingest_news():
-    with app.app_context():
-        for feed_url in RSS_FEEDS:
+    @abstractmethod
+    def ingest(self):
+        pass
+
+class RSSFeedIngestionStrategy(IngestionStrategy):
+
+    def __init__(self):
+        self.RSS_FEEDS = [
+            'https://moxie.foxnews.com/google-publisher/latest.xml',
+            'https://feeds.feedburner.com/ndtvnews-world-news',
+            'https://www.theguardian.com/world/rss'
+        ]
+    
+    def ingest(self):
+        articles = []
+        for feed_url in self.RSS_FEEDS:
             feed = feedparser.parse(feed_url)
             for entry in feed.entries:
-                article = Article.query.filter_by(url=entry.link).first()
-                if not article:
-                    published_at = datetime.now(timezone.utc)
-                    if hasattr(entry, 'published_parsed'):
-                        published_at = datetime(*entry.published_parsed[:6])
-                    content = ''
-                    if hasattr(entry, 'content'):
-                        content = entry.content[0].value
-                    elif hasattr(entry, 'summary'):
-                        content = entry.summary
-                    elif hasattr(entry, 'description'):
-                        content = entry.description
-                    article = Article(
-                        title=entry.title,
-                        url=entry.link,
-                        published_at=published_at,
-                        content=content,
-                        processed=False
-                    )
-                    db.session.add(article)
-                    db.session.commit()
-                    logger.info(f"Article ingested: {article.title}")
-                    send_message('articles_ingested', str(article.id))
+                published_at = datetime.now(timezone.utc)
+                if hasattr(entry, 'published_parsed'):
+                    published_at = datetime(*entry.published_parsed[:6])
+                content = ''
+                if hasattr(entry, 'content'):
+                    content = entry.content[0].value
+                elif hasattr(entry, 'summary'):
+                    content = entry.summary
+                elif hasattr(entry, 'description'):
+                    content = entry.description
+                article = Article(
+                    title=entry.title,
+                    url=entry.link,
+                    published_at=published_at,
+                    content=content,
+                    processed=False
+                )
+                articles.append(article)
+        return articles
+
+class NewsAPIIngestionStrategy(IngestionStrategy):
+    def __init__(self, api_key):
+        self.api_key = api_key
+        
+
+    def ingest(self):
+        articles = []
+        url = (f'https://newsapi.org/v2/top-headlines?country=us&apiKey={self.api_key}')
+        response = requests.get(url).json()
+
+        if response['status'] != 'ok':
+            raise RuntimeError("News API call failed")
+        
+        for article in response['articles']:
+            if article['content'] is None: # logic should probably be moved to pre-processing phase
+                continue
+            ingested_article = Article(
+                title = article['title'],
+                url = article['url'],
+                content = article['content'],
+                published_at = datetime.strptime(article['publishedAt'], "%Y-%m-%dT%H:%M:%SZ"),
+                processed = False
+            )
+            articles.append(ingested_article)
+        return articles
+
+class MultipleIngestionStrategy(IngestionStrategy):
+
+    def __init__(self, strategies: List[IngestionStrategy]):
+        self.strategies = strategies
+    
+    def ingest(self):
+        articles = []
+        for strategy in self.strategies:
+            articles.extend(strategy.ingest())
+        return articles
+
+class Ingestor(ABC):
+    @abstractmethod
+    def __init__(self, ingestionStrategy: IngestionStrategy):
+        self.ingestionStrategy = ingestionStrategy
+    
+    @abstractmethod
+    def run_ingestion(self):
+        pass
+
+
+class NewsIngestor(Ingestor):
+    def __init__(self, ingestionStrategy: IngestionStrategy):
+        self.ingestionStrategy = ingestionStrategy
+    
+    def run_ingestion(self):
+        new_articles = self.ingestionStrategy.ingest()
+
+        with app.app_context():
+            for article in new_articles:
+                if Article.query.filter_by(url=article.url).first():
+                    continue
+
+                db.session.add(article)
+                db.session.commit()
+                logger.info(f"Article ingested: {article.title}")
+                send_message('articles_ingested', str(article.id))
+
+def ingest_news():
+    strategies = []
+
+    load_dotenv()
+    news_api_key = os.getenv("NEWS_API_KEY")
+    if not news_api_key:
+        raise ValueError("NEWS_API_KEY not found in environment variables.")
+    newsAPIIngestionStrategy = NewsAPIIngestionStrategy(news_api_key)
+    strategies.append(newsAPIIngestionStrategy)
+
+    strategies.append(RSSFeedIngestionStrategy())
+
+    news_ingestion_strategy = MultipleIngestionStrategy(strategies)
+    newsIngestor = NewsIngestor(news_ingestion_strategy)
+    newsIngestor.run_ingestion()
+
+# def ingest_news():
+#     with app.app_context():
+#         for feed_url in RSS_FEEDS:
+#             feed = feedparser.parse(feed_url)
+#             for entry in feed.entries:
+#                 article = Article.query.filter_by(url=entry.link).first()
+#                 if not article:
+#                     published_at = datetime.now(timezone.utc)
+#                     if hasattr(entry, 'published_parsed'):
+#                         published_at = datetime(*entry.published_parsed[:6])
+#                     content = ''
+#                     if hasattr(entry, 'content'):
+#                         content = entry.content[0].value
+#                     elif hasattr(entry, 'summary'):
+#                         content = entry.summary
+#                     elif hasattr(entry, 'description'):
+#                         content = entry.description
+#                     article = Article(
+#                         title=entry.title,
+#                         url=entry.link,
+#                         published_at=published_at,
+#                         content=content,
+#                         processed=False
+#                     )
+#                     db.session.add(article)
+#                     db.session.commit()
+#                     logger.info(f"Article ingested: {article.title}")
+#                     send_message('articles_ingested', str(article.id))
 
 def process_articles():
     engine = create_engine(f'sqlite:///{db_path}')
