@@ -1,4 +1,3 @@
-
 # Insite Capstone Application
 
 ## Overview
@@ -37,6 +36,13 @@ This application ingests news articles from various RSS feeds, processes them to
 1. Ensure the database is initialized (automatically handled by startup.py).
 2. Start the application by running `startup.py`.
 3. Access the API endpoints at `http://localhost:5000`.
+
+## Environment Configuration
+Create a `.env` file in the project root with the following content:
+
+GEMINI_API_KEY={API_KEY}
+
+Ensure that the `.env` file is not committed (already added to .gitignore).
 
 ## Notes
 - Communication between services is managed via the custom message bus defined in message_bus.py.

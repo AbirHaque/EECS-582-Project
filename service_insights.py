@@ -1,6 +1,6 @@
 from common import app, db, logger, Topic, Insight, RankingsTopics
 import threading
-from ollama import chat
+from gemini_client import generate_content
 from message_bus import insights_queue
 
 def generate_insights():
@@ -15,13 +15,15 @@ def generate_insights():
                     ranked_items = RankingsTopics.query.filter_by(ranking_id=ranking_id).order_by(RankingsTopics.rank_order).all()
                     for item in ranked_items:
                         topic = Topic.query.get(item.topic_id)
-                        response = chat(
-                            model='llama3.2',
-                            messages=[{"role": "user", "content": f"Summarize this topic: {topic.name}"}]
-                        )
+                        api_response = generate_content(f"Summarize this topic: {topic.name}")
+                        logger.info(f"Received API response: {api_response}")
+                        candidate = api_response.get("candidates", [{}])[0]
+                        content = candidate.get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                        if not content:
+                            logger.warning(f"No content received for topic {topic.id} - API response: {api_response}")
                         insight = Insight(
                             topic_id=topic.id,
-                            content=response.message.content,
+                            content=content,
                             insight_type='summary'
                         )
                         db.session.add(insight)
