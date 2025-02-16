@@ -24,12 +24,13 @@ class Article(db.Model):
     published_at = db.Column(db.DateTime)
     content = db.Column(db.Text)
     processed = db.Column(db.Boolean, default=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
 
 class Topic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    articles = db.relationship('Article', secondary='articles_topics')
+    #articles = db.relationship('Article', secondary='articles_topics')
 
 class Ranking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,10 +57,10 @@ class SocialMediaPost(db.Model):
     views = db.Column(db.Integer)
     likes = db.Column(db.Integer)
 
-class ArticlesTopics(db.Model):
-    __tablename__ = 'articles_topics'
-    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), primary_key=True)
-    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), primary_key=True)
+# class ArticlesTopics(db.Model):
+#     __tablename__ = 'articles_topics'
+#     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), primary_key=True)
+#     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), primary_key=True)
 
 def init_database():
     with app.app_context():

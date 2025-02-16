@@ -19,7 +19,7 @@ else:
 
 def start_ingestion():
     service_ingestion.ingest_news()
-    service_ingestion.process_articles()
+    service_ingestion.cluster_articles()
 
 def start_rank_topics():
     service_ranking.rank_topics()

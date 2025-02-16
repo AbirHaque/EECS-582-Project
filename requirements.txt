@@ -7,3 +7,4 @@ chromadb==0.6.3
 ollama==0.4.7
 SQLAlchemy==2.0.38
 flask_cors==5.0.0
+newspaper4k==0.9.3.1

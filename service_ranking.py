@@ -1,4 +1,4 @@
-from common import app, db, logger, Topic, Ranking, RankingsTopics, SocialMediaPost
+from common import app, db, logger, Topic, Ranking, RankingsTopics, SocialMediaPost, Article
 import threading, requests
 from datetime import datetime, timezone
 from message_bus import ranking_queue, social_queue, send_message
@@ -16,20 +16,21 @@ def ensure_timezone(dt):
         return dt.replace(tzinfo=timezone.utc)
     return dt
 
-def calculate_topic_score(topic):
+def calculate_topic_score(topic, current_time):
     """
     Calculate topic score based on:
     1. Recency of articles (with time decay)
     2. Number of articles
     3. Source diversity
     """
-    current_time = datetime.now(timezone.utc)
+    # current_time = datetime.now(timezone.utc)
     
     # Calculate recency score
     recency_scores = []
     sources = set()
     try:
-        for article in topic.articles:
+        topic_articles = Article.query.filter(Article.topic_id == topic.id).all()
+        for article in topic_articles:
             article_time = ensure_timezone(article.published_at)
             # Time decay calculation
             age_hours = (current_time - article_time).total_seconds() / 3600
@@ -44,7 +45,7 @@ def calculate_topic_score(topic):
         avg_recency = sum(recency_scores) / len(recency_scores) if recency_scores else 0
         
         # Article count score (normalized by log to prevent domination by count)
-        article_count = math.log(1 + len(topic.articles))
+        article_count = math.log(1 + len(topic_articles))
         
         # Source diversity bonus (normalized)
         source_diversity = len(sources) / 3  # Assuming we want at least 3 sources for max diversity
@@ -55,6 +56,8 @@ def calculate_topic_score(topic):
             ARTICLE_COUNT_WEIGHT * article_count +
             0.2 * source_diversity  # 20% weight for source diversity
         )
+
+        logger.info(f"Topic score calculated: {topic}, {final_score}, article count: {article_count}")
         
         return final_score
     except Exception as e:
@@ -67,8 +70,10 @@ def create_new_ranking(topics):
     try:
         # Calculate scores and sort topics
         topic_scores = []
+        current_time = datetime.now(timezone.utc)
         for topic in topics:
-            score = calculate_topic_score(topic)
+            
+            score = calculate_topic_score(topic, current_time)
             topic_scores.append((topic, score))
         
         ranked_topics = sorted(topic_scores, key=lambda x: x[1], reverse=True)[:10]
@@ -103,7 +108,7 @@ def periodic_ranking():
     while True:
         try:
             with app.app_context():
-                topics = Topic.query.filter(Topic.articles.any()).all()
+                topics = Topic.query.all()
                 if topics:
                     ranking_id = create_new_ranking(topics)
                     if ranking_id:
@@ -122,7 +127,7 @@ def handle_new_topics(message):
             topic_ids = eval(message['body'])
             topics = Topic.query.filter(Topic.id.in_(topic_ids)).all()
             if topics:
-                all_topics = Topic.query.filter(Topic.articles.any()).all()
+                all_topics = Topic.query.all()
                 create_new_ranking(all_topics)
                 logger.info("Ranking updated due to new topics")
         except Exception as e:
