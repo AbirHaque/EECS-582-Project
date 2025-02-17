@@ -2,6 +2,7 @@ from common import app, Ranking, Insight
 from flask import jsonify
 from datetime import datetime, timedelta
 
+# Defining an endpoint to retrieve the latest ranking of topics
 @app.route('/topics')
 def get_top_topics():
     latest_ranking = Ranking.query.order_by(Ranking.created_at.desc()).first()
@@ -13,6 +14,7 @@ def get_top_topics():
         })
     return jsonify({})
 
+# Defining an endpoint to retrieve ranking history from the last hour
 @app.route('/rankings/history')
 def get_ranking_history():
     # Get rankings from the last hour
@@ -26,10 +28,12 @@ def get_ranking_history():
         'topics': [{'id': topic.id, 'name': topic.name} for topic in ranking.topics]
     } for ranking in rankings])
 
+# Defining an endpoint to fetch insights related to a specific topi
 @app.route('/topics/<int:topic_id>')
 def get_topic_insights(topic_id):
     insights = Insight.query.filter_by(topic_id=topic_id).all()
     return jsonify([{'type': insight.insight_type, 'content': insight.content} for insight in insights])
 
+# Running the Flask application if this script is executed directly
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
