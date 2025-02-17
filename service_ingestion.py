@@ -12,12 +12,13 @@ from abc import ABC, abstractmethod
 from typing import List
 from message_bus import send_message
 
+# Abstracting class defining the ingestion strategy
 class IngestionStrategy(ABC):
 
     @abstractmethod
     def ingest(self):
         pass
-
+# RSS feed ingestion strategy
 class RSSFeedIngestionStrategy(IngestionStrategy):
 
     def __init__(self):
@@ -52,6 +53,7 @@ class RSSFeedIngestionStrategy(IngestionStrategy):
                 articles.append(article)
         return articles
 
+# News API ingestion strategy
 class NewsAPIIngestionStrategy(IngestionStrategy):
     def __init__(self, api_key):
         self.api_key = api_key
@@ -88,6 +90,7 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
             articles.append(ingested_article)
         return articles
 
+# Combines multiple ingestion strategie
 class MultipleIngestionStrategy(IngestionStrategy):
 
     def __init__(self, strategies: List[IngestionStrategy]):
@@ -98,7 +101,8 @@ class MultipleIngestionStrategy(IngestionStrategy):
         for strategy in self.strategies:
             articles.extend(strategy.ingest())
         return articles
-
+    
+# Abstracting class for news ingestion
 class Ingestor(ABC):
     @abstractmethod
     def __init__(self, ingestionStrategy: IngestionStrategy):
@@ -108,7 +112,7 @@ class Ingestor(ABC):
     def run_ingestion(self):
         pass
 
-
+# News ingestor implementation
 class NewsIngestor(Ingestor):
     def __init__(self, ingestionStrategy: IngestionStrategy):
         self.ingestionStrategy = ingestionStrategy
@@ -126,6 +130,7 @@ class NewsIngestor(Ingestor):
                 logger.info(f"Article ingested: {article.title}")
                 send_message('articles_ingested', str(article.id))
 
+# Runs the news ingestion process
 def ingest_news():
     strategies = []
 
@@ -140,6 +145,7 @@ def ingest_news():
     newsIngestor = NewsIngestor(news_ingestion_strategy)
     newsIngestor.run_ingestion()
 
+# Absracting the class for clustering strategy
 class ClusteringStrategy(ABC):
 
     @abstractmethod
@@ -154,6 +160,7 @@ class ClusteringStrategy(ABC):
     def cluster(self):
         pass
 
+# HDBSCAN clustering strategy implementation
 class HDBSCANClusteringStrategy(ClusteringStrategy):
 
     def __init__(self, DBClient, vectorDBClient):
@@ -215,7 +222,7 @@ class TopicGenerator:
         else:
             logger.info("No topics generated")
 
-
+# Runs article clustering process
 def cluster_articles():
 
     engine = create_engine(f'sqlite:///{db_path}')
