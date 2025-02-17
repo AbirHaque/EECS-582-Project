@@ -1,5 +1,6 @@
 <template>
   <div class="home-page">
+    <!-- Header section displaying the title and update status -->
     <div class="header">
       <h1>Trending News Topics</h1>
       <div class="update-info">
@@ -11,14 +12,16 @@
         </div>
       </div>
     </div>
-
+    
+    <!-- Section displaying the current ranking and a button to toggle ranking history -->
     <div class="ranking-info">
       <p>Current Ranking: #{{ currentRankingId }}</p>
       <button @click="toggleRankingHistory" class="history-button">
         {{ showHistory ? 'Hide' : 'Show' }} Ranking History
       </button>
     </div>
-
+    
+    <!-- Ranking history section-->
     <div v-if="showHistory" class="ranking-history">
       <h3>Rankings from the last hour:</h3>
       <div class="history-list">
@@ -33,10 +36,12 @@
         </div>
       </div>
     </div>
-
+    
+    <!-- Error display -->
     <div v-if="error" class="error">
       {{ error }}
     </div>
+    <!-- Displaying list of topics -->
     <div v-else>
       <ul>
         <li v-for="topic in topics" :key="topic.id" :class="{ 'new-topic': newTopics.includes(topic.id) }">
@@ -68,22 +73,24 @@ export default {
     };
   },
   methods: {
+    // Fetches current topics from the API
     async fetchTopics() {
       this.isUpdating = true;
       try {
+        // Small delay to make loading state visible to user
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+        // Make API request to get current topics
         const response = await axios.get('http://localhost:5000/topics');
         console.log("API Response:", response.data);
-        
+        // Update the current ranking ID and topics data
         this.currentRankingId = response.data.ranking_id;
         const currentTopics = response.data.topics;
-        
+        // Determine which topics are new since last update
         const currentTopicIds = new Set(currentTopics.map(topic => topic.id));
         this.newTopics = currentTopics
           .filter(topic => !this.previousTopicIds.has(topic.id))
           .map(topic => topic.id);
-        
+        // Update component state with new data
         this.topics = currentTopics;
         this.previousTopicIds = currentTopicIds;
         this.error = null;
@@ -101,6 +108,7 @@ export default {
         }, 500);
       }
     },
+    // Fetches historical ranking data from the API
     async fetchRankingHistory() {
       try {
         const response = await axios.get('http://localhost:5000/rankings/history');
@@ -109,6 +117,7 @@ export default {
         console.error('Error fetching ranking history:', error);
       }
     },
+    // Formats ISO timestamp into user-friendly local time
     formatTime(isoString) {
       const utcDate = new Date(isoString + 'Z');  // Explicitly handle as UTC
       return utcDate.toLocaleTimeString('en-US', { 
@@ -119,6 +128,7 @@ export default {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Use local timezone
       });
     },
+    // Analyzes changes between two consecutive rankings
     getTopicChanges(ranking) {
       if (this.rankingHistory.length < 2) return null;
       const currentIndex = this.rankingHistory.findIndex(r => r.id === ranking.id);
@@ -139,6 +149,7 @@ export default {
       
       return changes.join(' | ');
     },
+    // Toggles the visibility of the ranking history section
     toggleRankingHistory() {
       this.showHistory = !this.showHistory;
       if (this.showHistory) {
@@ -146,6 +157,7 @@ export default {
       }
     }
   },
+  // Lifecycle hook: Called when component is created
   created() {
     this.fetchTopics();
     this.pollInterval = setInterval(() => {
@@ -158,6 +170,7 @@ export default {
       }
     }, 30000);
   },
+  // Lifecycle hook: Called right before component is destroyed
   beforeUnmount() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (this.historyPollInterval) clearInterval(this.historyPollInterval);
