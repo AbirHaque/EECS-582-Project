@@ -3,6 +3,7 @@ import threading
 from gemini_client import generate_content
 from message_bus import insights_queue
 
+# This function continuously listens to the insights queue and generates summaries for topics based on newly created rankings
 def generate_insights():
     logger.info("Insights generation service started.")
     while True:
