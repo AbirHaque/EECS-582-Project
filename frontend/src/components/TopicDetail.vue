@@ -1,13 +1,17 @@
 <template>
   <div class="home-page">
+    <!-- Loading state when data is being fetched -->
     <div v-if="loading">
       <p>Loading topic insights...</p>
     </div>
+    <!-- Main content when data is loaded -->
     <div v-else>
       <div class="header">
+        <!-- Header section with navigation and topic title -->
         <router-link to="/" class="home-button">Home</router-link>
         <h1>{{ topic.name }}</h1>
       </div>
+      <!-- Insights section displaying summary information -->
       <div class="insights">
         <h2>Insights:</h2>
         <div v-if="latestSummary">
@@ -26,19 +30,22 @@ export default {
   name: "TopicDetail",
   data() {
     return {
-      topic: null,
-      insights: [],
-      loading: true
+      topic: null, // Stores the current topic object
+      insights: [], // Stores the insights related to this topic
+      loading: true // Controls loading state visibility
     };
   },
   computed: {
+    // Computed property that returns the most recent summary insight
     latestSummary() {
       const summaries = this.insights.filter(i => i.type === 'summary');
       return summaries.length ? summaries[summaries.length - 1] : null;
     }
   },
   created() {
+    // Extract the topic ID from the route parameters
     const topicId = this.$route.params.id;
+    // Fetch topic details and insights from the API
     axios.get(`http://localhost:5000/topics/${topicId}`)
       .then(response => {
         if (Array.isArray(response.data)) {
