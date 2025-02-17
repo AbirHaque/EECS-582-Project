@@ -39,10 +39,10 @@ This application ingests news articles from various RSS feeds, processes them to
 
 ## Environment Configuration
 Create a `.env` file in the project root with the following content:
-
+```
 GEMINI_API_KEY={API_KEY}
 NEWS_API_KEY={NEWS_API_KEY}
-
+```
 Ensure that the `.env` file is not committed (already added to .gitignore).
 
 ## Notes
