@@ -40,7 +40,7 @@
     <div v-else>
       <ul>
         <li v-for="topic in topics" :key="topic.id" :class="{ 'new-topic': newTopics.includes(topic.id) }">
-          <router-link :to="'/topic/' + topic.id">{{ topic.name }}</router-link>
+          <router-link :to="{ path: '/topic/' + topic.id, query: { name: topic.name } }">{{ topic.name }}</router-link>
         </li>
       </ul>
     </div>
