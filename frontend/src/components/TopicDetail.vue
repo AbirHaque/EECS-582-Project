@@ -19,6 +19,21 @@
         </div>
         <p v-else>No insights available.</p>
       </div>
+      <!-- New social posts section -->
+      <div class="social-posts" v-if="socialPosts.length">
+        <h2>Social Media Posts:</h2>
+        <div class="social-posts-container">
+          <ul>
+            <li v-for="post in socialPosts" :key="post.id">
+              <p>{{ post.content }}</p>
+              <small>{{ new Date(post.created_at).toLocaleString() }}</small>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="social-posts" v-else>
+        <p>No social media posts available.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -32,6 +47,7 @@ export default {
     return {
       topic: null, // Stores the current topic object
       insights: [], // Stores the insights related to this topic
+      socialPosts: [], // added to store social media posts
       loading: true // Controls loading state visibility
     };
   },
@@ -55,11 +71,20 @@ export default {
           this.topic = response.data.topic || response.data;
           this.insights = response.data.insights ?? [];
         }
-        this.loading = false;
       })
       .catch(error => {
         console.error('Error fetching topic details:', error);
+      })
+      .finally(() => {
         this.loading = false;
+      });
+    // Fetch social media posts
+    axios.get(`http://192.168.77.125:5000/topics/${topicId}/social`)
+      .then(response => {
+        this.socialPosts = response.data;
+      })
+      .catch(error => {
+        console.error('Error fetching social media posts:', error);
       });
   }
 };
@@ -97,5 +122,22 @@ a:hover {
 }
 .home-button:hover {
   background-color: #1976D2;
+}
+.social-posts {
+  margin-top: 20px;
+}
+
+.social-posts-container {
+  max-height: 300px; /* Adjust height for max 3 posts */
+  overflow-y: auto;
+}
+
+.social-posts ul {
+  list-style: none;
+  padding: 0;
+}
+.social-posts li {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
 }
 </style>
