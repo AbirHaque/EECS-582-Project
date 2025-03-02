@@ -162,7 +162,7 @@ def ingest_social():
                     ranking_id = int(message['body'])
                     ranking = Ranking.query.get(ranking_id)
                     for topic in ranking.topics:
-                        search_query = topic.name
+                        search_query = " ".join(topic.name.split()[:3])
                         response = requests.get(
                             'https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts',
                             params={'q': search_query, 'sort': 'latest', 'limit': 25}
