@@ -1,4 +1,4 @@
-from common import app, Ranking, Insight
+from common import app, Ranking, Insight, SocialMediaPost
 from flask import jsonify
 from datetime import datetime, timedelta
 
@@ -33,6 +33,18 @@ def get_ranking_history():
 def get_topic_insights(topic_id):
     insights = Insight.query.filter_by(topic_id=topic_id).all()
     return jsonify([{'type': insight.insight_type, 'content': insight.content} for insight in insights])
+
+# Defining an endpoint to fetch social media posts related to a specific topic
+@app.route('/topics/<int:topic_id>/social')
+def get_topic_social_posts(topic_id):
+    posts = SocialMediaPost.query.filter_by(topic_id=topic_id).all()
+    return jsonify([{
+        'id': post.id,
+        'content': post.content,
+        'created_at': post.created_at.isoformat(),
+        'views': post.views,
+        'likes': post.likes
+    } for post in posts])
 
 # Running the Flask application if this script is executed directly
 if __name__ == '__main__':
