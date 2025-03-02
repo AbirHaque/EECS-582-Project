@@ -1,4 +1,5 @@
 from common import app, Ranking, Insight, SocialMediaPost
+import json
 from flask import jsonify
 from datetime import datetime, timedelta
 
@@ -45,6 +46,24 @@ def get_topic_social_posts(topic_id):
         'views': post.views,
         'likes': post.likes
     } for post in posts])
+
+# Defining an endpoint to fetch sentiment analysis for a specific topic
+@app.route('/topics/<int:topic_id>/sentiment')
+def get_topic_sentiment(topic_id):
+    sentiment_insight = Insight.query.filter_by(topic_id=topic_id, insight_type="sentiment").order_by(Insight.id.desc()).first()
+    
+    if sentiment_insight:
+        try:
+            # Parse the sentiment data from the JSON string
+            sentiment_data = json.loads(sentiment_insight.content)
+            return jsonify({
+                'topic_id': topic_id,
+                'sentiment': sentiment_data
+            })
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid sentiment data format'}), 500
+    else:
+        return jsonify({'error': 'No sentiment analysis available for this topic'}), 404
 
 # Running the Flask application if this script is executed directly
 if __name__ == '__main__':

@@ -34,6 +34,39 @@
       <div class="social-posts" v-else>
         <p>No social media posts available.</p>
       </div>
+      
+      <!-- Sentiment Analysis Section -->
+      <div class="sentiment-section" v-if="sentimentData">
+        <h2>Public Sentiment Analysis</h2>
+        
+        <!-- Sentiments Chart -->
+        <div class="sentiment-chart" v-if="sentimentData.sentiments">
+          <h3>Overall Sentiment</h3>
+          <div class="chart-container">
+            <div class="sentiment-bars">
+              <div v-for="(value, sentiment) in filteredSentiments" :key="sentiment" 
+                   class="sentiment-bar" 
+                   :style="{ width: Math.max(value, 10) + '%', 'background-color': sentimentColors[sentiment] || '#9E9E9E' }">
+                <span>{{ sentiment }}: {{ value }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Emotions Chart -->
+        <div class="sentiment-chart" v-if="sentimentData.emotions">
+          <h3>Emotional Tone</h3>
+          <div class="chart-container">
+            <div class="emotion-bars">
+              <div v-for="(value, emotion) in filteredEmotions" :key="emotion" 
+                   class="emotion-bar" 
+                   :style="{ width: Math.max(value, 10) + '%', 'background-color': emotionColors[emotion] || '#9E9E9E' }">
+                <span>{{ emotion }}: {{ value }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -48,7 +81,20 @@ export default {
       topic: null, // Stores the current topic object
       insights: [], // Stores the insights related to this topic
       socialPosts: [], // added to store social media posts
-      loading: true // Controls loading state visibility
+      sentimentData: null, // Stores sentiment analysis data
+      loading: true, // Controls loading state visibility
+      sentimentColors: {
+        'Positive': '#4CAF50', // Green
+        'Negative': '#F44336', // Red
+        'Neutral': '#9E9E9E'  // Gray
+      },
+      emotionColors: {
+        'Joy': '#FFEB3B',      // Yellow
+        'Anger': '#F44336',    // Red
+        'Sadness': '#3F51B5',  // Indigo
+        'Fear': '#673AB7',     // Deep Purple
+        'Surprise': '#00BCD4'  // Cyan
+      }
     };
   },
   computed: {
@@ -56,6 +102,34 @@ export default {
     latestSummary() {
       const summaries = this.insights.filter(i => i.type === 'summary');
       return summaries.length ? summaries[summaries.length - 1] : null;
+    },
+    // Computed property that returns only sentiments with values > 0
+    filteredSentiments() {
+      if (!this.sentimentData || !this.sentimentData.sentiments) return {};
+      
+      // Filter out sentiments with 0 values
+      const result = {};
+      Object.entries(this.sentimentData.sentiments).forEach(([sentiment, value]) => {
+        if (value > 0) {
+          result[sentiment] = value;
+        }
+      });
+      
+      return result;
+    },
+    // Computed property that returns only emotions with values > 0
+    filteredEmotions() {
+      if (!this.sentimentData || !this.sentimentData.emotions) return {};
+      
+      // Filter out emotions with 0 values
+      const result = {};
+      Object.entries(this.sentimentData.emotions).forEach(([emotion, value]) => {
+        if (value > 0) {
+          result[emotion] = value;
+        }
+      });
+      
+      return result;
     }
   },
   created() {
@@ -79,12 +153,23 @@ export default {
         this.loading = false;
       });
     // Fetch social media posts
-    axios.get(`http://192.168.77.125:5000/topics/${topicId}/social`)
+    axios.get(`http://localhost:5000/topics/${topicId}/social`)
       .then(response => {
         this.socialPosts = response.data;
       })
       .catch(error => {
         console.error('Error fetching social media posts:', error);
+      });
+      
+    // Fetch sentiment analysis
+    axios.get(`http://localhost:5000/topics/${topicId}/sentiment`)
+      .then(response => {
+        if (response.data && response.data.sentiment) {
+          this.sentimentData = response.data.sentiment;
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching sentiment analysis:', error);
       });
   }
 };
@@ -139,5 +224,38 @@ a:hover {
 .social-posts li {
   border-bottom: 1px solid #ddd;
   padding: 10px 0;
+}
+
+/* Sentiment Analysis Styles */
+.sentiment-section {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.sentiment-chart {
+  margin-bottom: 20px;
+}
+
+.chart-container {
+  margin-top: 10px;
+}
+
+.sentiment-bars, .emotion-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sentiment-bar, .emotion-bar {
+  height: 30px;
+  border-radius: 4px;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-weight: bold;
+  transition: width 0.5s ease;
 }
 </style>
