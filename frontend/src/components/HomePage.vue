@@ -1,51 +1,43 @@
 <template>
-  <div class="home-page">
-    <!-- Header section displaying the title and update status -->
-    <div class="header">
-      <h1>Trending News Topics</h1>
-      <div class="update-info">
-        <div class="status-container">
-          <span :class="{ 'indicator': true, 'updating': isUpdating }"></span>
-          <span class="status-text">
-            {{ isUpdating ? 'Updating...' : 'Last updated: ' + lastUpdateTime }}
-          </span>
-        </div>
+  <div class="max-w-3xl mx-auto p-5">
+    <div class="flex justify-between items-center mb-5">
+      <h1 class="text-3xl font-bold text-gray-800 m-0">Trending News Topics</h1>
+      <div class="flex items-center gap-2">
+        <span :class="['inline-block w-2 h-2 rounded-full transition-colors', isUpdating ? 'bg-yellow-500 animate-pulse' : 'bg-green-500']"></span>
+        <span class="text-sm text-gray-500">
+          {{ isUpdating ? 'Updating...' : 'Last updated: ' + lastUpdateTime }}
+        </span>
       </div>
     </div>
-    
-    <!-- Section displaying the current ranking and a button to toggle ranking history -->
-    <div class="ranking-info">
+    <div class="flex items-center gap-4 mb-5">
       <p>Current Ranking: #{{ currentRankingId }}</p>
-      <button @click="toggleRankingHistory" class="history-button">
+      <button @click="toggleRankingHistory" class="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-700">
         {{ showHistory ? 'Hide' : 'Show' }} Ranking History
       </button>
     </div>
-    
-    <!-- Ranking history section-->
-    <div v-if="showHistory" class="ranking-history">
-      <h3>Rankings from the last hour:</h3>
-      <div class="history-list">
-        <div v-for="ranking in rankingHistory" :key="ranking.id" class="history-item">
-          <div class="history-header">
+    <div v-if="showHistory" class="bg-gray-100 p-4 rounded mb-5">
+      <h3 class="text-lg font-semibold mb-2">Rankings from the last hour:</h3>
+      <div class="max-h-72 overflow-y-auto">
+        <div v-for="ranking in rankingHistory" :key="ranking.id" class="p-2 border-b border-gray-300 bg-white mb-2 rounded">
+          <div class="flex justify-between mb-1">
             <strong>Ranking #{{ ranking.id }}</strong>
             <span>{{ formatTime(ranking.created_at) }}</span>
           </div>
-          <div class="topic-changes" v-if="getTopicChanges(ranking)">
+          <div class="text-sm text-gray-500 mt-1" v-if="getTopicChanges(ranking)">
             {{ getTopicChanges(ranking) }}
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Error display -->
-    <div v-if="error" class="error">
+    <div v-if="error" class="text-red-500 p-2 bg-red-100 rounded my-2">
       {{ error }}
     </div>
-    <!-- Displaying list of topics -->
     <div v-else>
-      <ul>
-        <li v-for="topic in topics" :key="topic.id" :class="{ 'new-topic': newTopics.includes(topic.id) }">
-          <router-link :to="{ path: '/topic/' + topic.id, query: { name: topic.name } }">{{ topic.name }}</router-link>
+      <ul class="list-none p-0">
+        <li v-for="topic in topics" :key="topic.id" :class="[ 'my-2 p-2 border-b border-gray-200 transition-colors', newTopics.includes(topic.id) ? 'bg-blue-100' : '' ]">
+          <router-link :to="{ path: '/topic/' + topic.id, query: { name: topic.name } }" class="text-blue-500 no-underline hover:underline">
+            {{ topic.name }}
+          </router-link>
         </li>
       </ul>
     </div>
@@ -177,146 +169,3 @@ export default {
   }
 };
 </script>
-
-<style>
-.home-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.ranking-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.history-button {
-  padding: 8px 16px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.history-button:hover {
-  background-color: #1976D2;
-}
-
-.ranking-history {
-  background-color: #f5f5f5;
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.history-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.history-item {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  background-color: white;
-  margin-bottom: 8px;
-  border-radius: 4px;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-}
-
-.topic-changes {
-  font-size: 0.9em;
-  color: #666;
-  margin-top: 5px;
-}
-
-.status-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #4CAF50;
-  transition: background-color 0.3s ease;
-}
-
-.updating {
-  background-color: #FFA000;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
-.status-text {
-  font-size: 0.9em;
-  color: #666;
-}
-
-h1 {
-  color: #333;
-  margin: 0;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  margin: 10px 0;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.3s ease;
-}
-
-.new-topic {
-  background-color: #e3f2fd;
-  animation: fadeBackground 3s forwards;
-}
-
-@keyframes fadeBackground {
-  from { background-color: #e3f2fd; }
-  to { background-color: transparent; }
-}
-
-.error {
-  color: red;
-  padding: 10px;
-  background-color: #ffebee;
-  border-radius: 4px;
-  margin: 10px 0;
-}
-
-a {
-  color: #2196F3;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-</style>

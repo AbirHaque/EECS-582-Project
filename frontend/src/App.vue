@@ -9,8 +9,8 @@ export default {
 }
 </script>
 <style>
-body {
+/* body {
   font-family: 	Times New Roman, sans-serif;
   margin: 20px;
-}
+} */
 </style>

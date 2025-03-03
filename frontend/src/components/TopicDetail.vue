@@ -1,66 +1,55 @@
 <template>
-  <div class="home-page">
-    <!-- Loading state when data is being fetched -->
+  <div class="max-w-3xl mx-auto p-5">
     <div v-if="loading">
       <p>Loading topic insights...</p>
     </div>
-    <!-- Main content when data is loaded -->
     <div v-else>
-      <div class="header">
-        <!-- Header section with navigation and topic title -->
-        <router-link to="/" class="home-button">Home</router-link>
-        <h1>{{ topic.name }}</h1>
+      <div class="flex flex-col items-start mb-5">
+        <router-link to="/" class="px-4 py-2 bg-blue-500 text-white rounded no-underline hover:bg-blue-700">Home</router-link>
+        <h1 class="mt-2 text-2xl font-bold">{{ topic.name }}</h1>
       </div>
-      <!-- Insights section displaying summary information -->
-      <div class="insights">
-        <h2>Insights:</h2>
+      <div class="mt-5">
+        <h2 class="text-xl font-semibold">Insights:</h2>
         <div v-if="latestSummary">
           <p><strong>{{ latestSummary.type }}:</strong> {{ latestSummary.content }}</p>
         </div>
         <p v-else>No insights available.</p>
       </div>
-      <!-- New social posts section -->
-      <div class="social-posts" v-if="socialPosts.length">
-        <h2>Social Media Posts:</h2>
-        <div class="social-posts-container">
-          <ul>
-            <li v-for="post in socialPosts" :key="post.id">
+      <div class="mt-5" v-if="socialPosts.length">
+        <h2 class="text-xl font-semibold">Social Media Posts:</h2>
+        <div class="max-h-72 overflow-y-auto">
+          <ul class="list-none p-0">
+            <li v-for="post in socialPosts" :key="post.id" class="border-b border-gray-300 py-2">
               <p>{{ post.content }}</p>
               <small>{{ new Date(post.created_at).toLocaleString() }}</small>
             </li>
           </ul>
         </div>
       </div>
-      <div class="social-posts" v-else>
+      <div class="mt-5" v-else>
         <p>No social media posts available.</p>
       </div>
-      
-      <!-- Sentiment Analysis Section -->
-      <div class="sentiment-section" v-if="sentimentData">
-        <h2>Public Sentiment Analysis</h2>
-        
-        <!-- Sentiments Chart -->
-        <div class="sentiment-chart" v-if="sentimentData.sentiments">
-          <h3>Overall Sentiment</h3>
-          <div class="chart-container">
-            <div class="sentiment-bars">
+      <div class="mt-7 p-4 bg-gray-100 rounded-lg" v-if="sentimentData">
+        <h2 class="text-xl font-semibold mb-4">Public Sentiment Analysis</h2>
+        <div class="mb-5" v-if="sentimentData.sentiments">
+          <h3 class="text-lg font-semibold">Overall Sentiment</h3>
+          <div class="mt-2">
+            <div class="flex flex-col gap-2">
               <div v-for="(value, sentiment) in filteredSentiments" :key="sentiment" 
-                   class="sentiment-bar" 
-                   :style="{ width: Math.max(value, 10) + '%', 'background-color': sentimentColors[sentiment] || '#9E9E9E' }">
+                class="h-8 rounded text-white flex items-center pl-2 font-bold transition-all duration-500" 
+                :style="{ width: Math.max(value, 10) + '%', backgroundColor: sentimentColors[sentiment] || '#9E9E9E' }">
                 <span>{{ sentiment }}: {{ value }}%</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- Emotions Chart -->
-        <div class="sentiment-chart" v-if="sentimentData.emotions">
-          <h3>Emotional Tone</h3>
-          <div class="chart-container">
-            <div class="emotion-bars">
+        <div class="mb-5" v-if="sentimentData.emotions">
+          <h3 class="text-lg font-semibold">Emotional Tone</h3>
+          <div class="mt-2">
+            <div class="flex flex-col gap-2">
               <div v-for="(value, emotion) in filteredEmotions" :key="emotion" 
-                   class="emotion-bar" 
-                   :style="{ width: Math.max(value, 10) + '%', 'background-color': emotionColors[emotion] || '#9E9E9E' }">
+                class="h-8 rounded text-white flex items-center pl-2 font-bold transition-all duration-500" 
+                :style="{ width: Math.max(value, 10) + '%', backgroundColor: emotionColors[emotion] || '#9E9E9E' }">
                 <span>{{ emotion }}: {{ value }}%</span>
               </div>
             </div>
@@ -174,88 +163,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.home-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-.header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-a {
-  color: #2196F3;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-.insights {
-  margin-top: 20px;
-}
-.home-button {
-  padding: 8px 16px;
-  background-color: #2196F3;
-  color: white;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-}
-.home-button:hover {
-  background-color: #1976D2;
-}
-.social-posts {
-  margin-top: 20px;
-}
-
-.social-posts-container {
-  max-height: 300px; /* Adjust height for max 3 posts */
-  overflow-y: auto;
-}
-
-.social-posts ul {
-  list-style: none;
-  padding: 0;
-}
-.social-posts li {
-  border-bottom: 1px solid #ddd;
-  padding: 10px 0;
-}
-
-/* Sentiment Analysis Styles */
-.sentiment-section {
-  margin-top: 30px;
-  padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-}
-
-.sentiment-chart {
-  margin-bottom: 20px;
-}
-
-.chart-container {
-  margin-top: 10px;
-}
-
-.sentiment-bars, .emotion-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sentiment-bar, .emotion-bar {
-  height: 30px;
-  border-radius: 4px;
-  color: white;
-  display: flex;
-  align-items: center;
-  padding-left: 10px;
-  font-weight: bold;
-  transition: width 0.5s ease;
-}
-</style>
