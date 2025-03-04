@@ -1,6 +1,6 @@
 from common import app, db, logger, Topic, Ranking, RankingsTopics, SocialMediaPost, Article
 import threading, requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from message_bus import ranking_queue, social_queue, send_message
 import time
 import math
@@ -163,9 +163,10 @@ def ingest_social():
                     ranking = Ranking.query.get(ranking_id)
                     for topic in ranking.topics:
                         search_query = " ".join(topic.name.split()[:3])
+                        two_days_ago = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
                         response = requests.get(
                             'https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts',
-                            params={'q': search_query, 'sort': 'latest', 'limit': 25}
+                            params={'q': search_query, 'sort': 'top', 'since': two_days_ago, 'limit': 25}
                         )
                         if response.status_code == 200:
                             posts = response.json().get('posts', [])
