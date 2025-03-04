@@ -9,8 +9,4 @@ export default {
 }
 </script>
 <style>
-/* body {
-  font-family: 	Times New Roman, sans-serif;
-  margin: 20px;
-} */
 </style>
