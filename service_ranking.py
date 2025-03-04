@@ -151,7 +151,7 @@ def rank_topics():
         ranking_queue.task_done()
         
 def ingest_social():
-    """Social media ingestion service with improved datetime handling"""
+    """Social media ingestion service with improved datetime handling and duplicate prevention."""
     logger.info("Social media ingestion service started.")
     while True:
         message = social_queue.get()
@@ -161,6 +161,11 @@ def ingest_social():
                 try:
                     ranking_id = int(message['body'])
                     ranking = Ranking.query.get(ranking_id)
+                    if not ranking:
+                        logger.warning(f"Ranking with id {ranking_id} not found.")
+                        social_queue.task_done()
+                        continue
+
                     for topic in ranking.topics:
                         search_query = " ".join(topic.name.split()[:3])
                         two_days_ago = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
@@ -172,6 +177,7 @@ def ingest_social():
                             posts = response.json().get('posts', [])
                             for post in posts:
                                 record = post.get('record', {})
+                                content = record.get('text', '')
                                 created_at_str = record.get('createdAt')
                                 try:
                                     if created_at_str:
@@ -187,14 +193,25 @@ def ingest_social():
                                     logger.warning(f"Invalid datetime format: {created_at_str}, using current time")
                                     created_at = datetime.now(timezone.utc)
 
-                                social_post = SocialMediaPost(
+                                # Check if the post already exists
+                                existing_post = SocialMediaPost.query.filter_by(
                                     topic_id=topic.id,
-                                    content=record.get('text', ''),
-                                    created_at=created_at,
-                                    views=post.get('views', 0),
-                                    likes=post.get('likes', 0)
-                                )
-                                db.session.add(social_post)
+                                    content=content,
+                                    created_at=created_at
+                                ).first()
+
+                                if not existing_post:
+                                    social_post = SocialMediaPost(
+                                        topic_id=topic.id,
+                                        content=content,
+                                        created_at=created_at,
+                                        views=post.get('views', 0),
+                                        likes=post.get('likes', 0)
+                                    )
+                                    db.session.add(social_post)
+                                    logger.info(f"Ingested new social media post for topic: {topic.name}")
+                                else:
+                                    logger.info(f"Duplicate post found, skipping. Topic: {topic.name}")
                             db.session.commit()
                             logger.info(f"Ingested social media posts for topic: {topic.name}")
                         else:
