@@ -186,6 +186,23 @@ def generate_insights():
                         db.session.add(insight)
                         db.session.commit()
                         logger.info(f"Summary insight generated for topic {topic.id}: {insight.id}")
+
+                        prompt_personal = f"Provide a concise paragraph detailing how the below news articles may directly affect an average person. Explain precisely how an average person's daily life may be affected by the news articles as well as what actionable steps they may take.\n{prompt_content}"
+                        api_response = generate_content(prompt_personal)
+                        logger.info(f"Received API response: {api_response}")
+                        candidate = api_response.get("candidates", [{}])[0]
+                        content = candidate.get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                        if not content:
+                            logger.warning(f"No content received for topic {topic.id} - API response: {api_response}")
+                        insight = Insight(
+                            topic_id=topic.id,
+                            content=content,
+                            insight_type='personal'
+                        )
+                        db.session.add(insight)
+                        db.session.commit()
+                        logger.info(f"Personal insight generated for topic {topic.id}: {insight.id}")
+
                         
                         # After generating the summary, also generate sentiment analysis
                         analyze_sentiment_for_topic(topic.id)

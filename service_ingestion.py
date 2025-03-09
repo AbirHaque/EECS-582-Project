@@ -63,7 +63,7 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
     def ingest(self):
         articles = []
         sources = ['al-jazeera-english', 'associated-press', 'bbc-news', 'cnn']
-        num_articles = 100
+        num_articles = 50
         url = (f'https://newsapi.org/v2/everything?apiKey={self.api_key}&sortBy=popularity&pageSize={num_articles}&sources={",".join(sources)}')
         response = requests.get(url).json()
 
