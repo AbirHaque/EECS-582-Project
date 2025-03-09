@@ -1,4 +1,4 @@
-from common import app, db, logger, Topic, Insight, RankingsTopics, SocialMediaPost
+from common import app, db, logger, Topic, Insight, RankingsTopics, SocialMediaPost, Article
 import json
 import random
 import threading
@@ -163,7 +163,16 @@ def generate_insights():
                     ranked_items = RankingsTopics.query.filter_by(ranking_id=ranking_id).order_by(RankingsTopics.rank_order).all()
                     for item in ranked_items:
                         topic = Topic.query.get(item.topic_id)
-                        api_response = generate_content(f"Summarize this topic: {topic.name}")
+                        topic_articles = Article.query.filter(Article.topic_id == topic.id).all()
+
+                        prompt_content = ""
+                        for i, article in enumerate(topic_articles):
+                            prompt_content += f"Article {i+1}) {article.content}\n"
+
+                        prompt = f"Summarize the articles below into one concise paragraph. The target audience is users who want the key details and highlights of the articles.\n{prompt_content}"
+
+                        #api_response = generate_content(f"Summarize this topic: {topic.name}")
+                        api_response = generate_content(prompt)
                         logger.info(f"Received API response: {api_response}")
                         candidate = api_response.get("candidates", [{}])[0]
                         content = candidate.get("content", {}).get("parts", [{}])[0].get("text", "").strip()

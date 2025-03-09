@@ -71,7 +71,7 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
             raise RuntimeError("News API call failed")
         
         for art_num, article in enumerate(response['articles']):
-            print(f"Processing news api article {art_num} out of {num_articles}")
+            print(f"Processing news api article {art_num+1} out of {num_articles}")
             if article['content'] is None: # logic should probably be moved to pre-processing phase
                 print("Found empty article, skipping...")
                 continue
@@ -312,6 +312,6 @@ if __name__ == '__main__':
         init_database()
     else:
         logger.info("Database file already exists.")
-    ingest_news()
-    cluster_articles()
+    # ingest_news()
+    # cluster_articles()
     # process_articles()
