@@ -12,6 +12,8 @@ import service_ingestion
 import service_ranking
 import service_insights
 import service_api
+import sys
+
 # Checks if the database file exists; if not, initialize the database
 if not os.path.exists(db_path):
     logger.info("Database file not found, initializing database...")
@@ -28,21 +30,26 @@ def start_ingestion():
 def start_rank_topics():
     service_ranking.rank_topics()
 
-
 # Function to start the social media data ingestion service
 def start_ingest_social():
     service_ranking.ingest_social()
 
-# Function to start the insights generation servi
+# Function to start the insights generation service
 def start_generate_insights():
     service_insights.generate_insights()
 
 if __name__ == '__main__':
-    print("Starting all services...")
-    threading.Thread(target=start_ingestion, daemon=True).start()
-    threading.Thread(target=start_rank_topics, daemon=True).start()
-    threading.Thread(target=start_ingest_social, daemon=True).start()
-    threading.Thread(target=start_generate_insights, daemon=True).start()
+    # Check for demo mode flag
+    if "--demo" in sys.argv:
+        print("Demo mode enabled: only running the API service.")
+        print("API service running at http://localhost:5000")
+        service_api.app.run(host='0.0.0.0', debug=True)
+    else:
+        print("Starting all services...")
+        threading.Thread(target=start_ingestion, daemon=True).start()
+        threading.Thread(target=start_rank_topics, daemon=True).start()
+        threading.Thread(target=start_ingest_social, daemon=True).start()
+        threading.Thread(target=start_generate_insights, daemon=True).start()
 
-    print("API service running at http://localhost:5000")
-    service_api.app.run(host='0.0.0.0', debug=True)
+        print("API service running at http://localhost:5000")
+        service_api.app.run(host='0.0.0.0', debug=True)
