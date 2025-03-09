@@ -8,6 +8,7 @@ import chromadb
 import newspaper
 import numpy as np
 from sklearn.cluster import HDBSCAN
+from scipy.spatial.distance import pdist
 from abc import ABC, abstractmethod
 from typing import List
 from message_bus import send_message
@@ -61,20 +62,25 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
 
     def ingest(self):
         articles = []
-        url = (f'https://newsapi.org/v2/top-headlines?country=us&apiKey={self.api_key}')
+        sources = ['al-jazeera-english', 'associated-press', 'bbc-news', 'cnn']
+        num_articles = 100
+        url = (f'https://newsapi.org/v2/everything?apiKey={self.api_key}&sortBy=popularity&pageSize={num_articles}&sources={",".join(sources)}')
         response = requests.get(url).json()
 
         if response['status'] != 'ok':
             raise RuntimeError("News API call failed")
         
-        for article in response['articles']:
+        for art_num, article in enumerate(response['articles']):
+            print(f"Processing news api article {art_num} out of {num_articles}")
             if article['content'] is None: # logic should probably be moved to pre-processing phase
+                print("Found empty article, skipping...")
                 continue
 
             try:
-                art = newspaper.article(url)
+                art = newspaper.article(article['url'])
                 art.download()
                 art.parse()
+                print("Article downloaded")
             except:
                 continue
             
@@ -180,6 +186,16 @@ class HDBSCANClusteringStrategy(ClusteringStrategy):
         embeddings = np.array(self.articles['embeddings'])
         hdb = HDBSCAN(min_cluster_size=2)
         hdb.fit(embeddings)
+
+        # impose max distance limit
+        threshold = 1.0
+        for cluster in np.unique(hdb.labels_):
+            if cluster == -1:
+                continue
+            points = embeddings[hdb.labels_ == cluster]
+            max_dist = np.max(pdist(points))
+            if max_dist > threshold:
+                hdb.labels_[hdb.labels_ == cluster] = -1 # mark as noise
 
         labels = set()
         topics = {} # map labels to topics
