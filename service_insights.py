@@ -169,7 +169,7 @@ def generate_insights():
                         for i, article in enumerate(topic_articles):
                             prompt_content += f"Article {i+1}) {article.content}\n"
 
-                        prompt = f"Summarize the articles below into one concise paragraph. The target audience is users who want the key details and highlights of the articles.\n{prompt_content}"
+                        prompt = f"You are a summarizer bot who simply returns summaries. Summarize the articles below into one concise paragraph. The target audience is users who want the key details and highlights of the articles. Provide ONLY the raw summary paragraph and no markdown and no other.\n{prompt_content}"
 
                         #api_response = generate_content(f"Summarize this topic: {topic.name}")
                         api_response = generate_content(prompt)
@@ -187,7 +187,7 @@ def generate_insights():
                         db.session.commit()
                         logger.info(f"Summary insight generated for topic {topic.id}: {insight.id}")
 
-                        prompt_personal = f"Provide a concise paragraph detailing how the below news articles may directly affect an average person. Explain precisely how an average person's daily life may be affected by the news articles as well as what actionable steps they may take.\n{prompt_content}"
+                        prompt_personal = f"Provide a concise paragraph detailing how the below news articles may directly affect an average person. Explain precisely how an average person's daily life may be affected by the news articles as well as what actionable steps they may take. Provide only the raw paragraph and no markdown.\n{prompt_content}"
                         api_response = generate_content(prompt_personal)
                         logger.info(f"Received API response: {api_response}")
                         candidate = api_response.get("candidates", [{}])[0]

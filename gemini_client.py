@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import logging
 import time
 import threading
+import ollama
 
 # Loading environment variables from a .env file
 load_dotenv()
@@ -23,55 +24,75 @@ request_count = 0
 window_start = time.time()
 rate_limit_lock = threading.Lock()
 
+OLLAMA_SERVER = os.getenv("OLLAMA_SERVER", "False").lower() == "true"
+
+if OLLAMA_SERVER:
+    import ollama
+    OLLAMA_MODEL = "gemma3:4b"
+    logger.info("Using Ollama API")
+else:
+    logger.info("Using Gemini API")
+
+# Function to generate content using the Gemini API
 # Function to generate content using the Gemini API
 def generate_content(prompt_text):
-    global request_count, window_start
-    max_retries = 3
-    delay = 1
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-    payload = {
-        "contents": [
-            {
-                "parts": [{"text": prompt_text}]
-            }
-        ]
-    }
-    headers = {"Content-Type": "application/json"}
-    # Attempting the API request with retries
-    for attempt in range(max_retries):
-        with rate_limit_lock:
-            now = time.time()
-            if now - window_start >= REQUEST_WINDOW:
-                logger.debug("Resetting local rate-limit counters")
-                window_start = now
-                request_count = 0
-            if request_count >= REQUEST_LIMIT:
-                sleep_time = REQUEST_WINDOW - (now - window_start)
-                logger.info(f"Local rate limit reached (count: {request_count}). Sleeping for {sleep_time} seconds...")
-                time.sleep(sleep_time)
-                window_start = time.time()
-                request_count = 0
-            else:
-                logger.debug(f"Local request count: {request_count}/{REQUEST_LIMIT}")
-            request_count += 1
-        # Handling rate-limiting errors 
-        response = requests.post(url, headers=headers, json=payload)
-        logger.info(f"Gemini API response status: {response.status_code}")
-        if response.status_code == 429:
+    if OLLAMA_SERVER:
+        try:
+            response = ollama.chat(model=OLLAMA_MODEL, messages=[{'role': 'user', 'content': prompt_text}])
+            logger.info(f"Ollama API response: {response}")
+            # Ensure the response is in the same format as the Gemini API
+            return {'candidates': [{'content': {'parts': [{'text': response['message']['content']}]}}]}
+        except Exception as e:
+            logger.error(f"Ollama API request failed: {e}")
+            raise
+    else:
+        global request_count, window_start
+        max_retries = 3
+        delay = 1
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": prompt_text}]
+                }
+            ]
+        }
+        headers = {"Content-Type": "application/json"}
+        # Attempting the API request with retries
+        for attempt in range(max_retries):
             with rate_limit_lock:
                 now = time.time()
-                remaining = REQUEST_WINDOW - (now - window_start)
-                if remaining < delay:
-                    remaining = delay
-                logger.warning(f"API returned 429. Sleeping for {remaining} seconds to respect rate limits (attempt {attempt+1}/{max_retries}).")
-                time.sleep(remaining)
-                window_start = time.time()
-                request_count = 0
-            continue
-        # If the request was successful, will process the response
-        response.raise_for_status()
-        json_response = response.json()
-        logger.info(f"Gemini API response: {json_response}")
-        return json_response
-    # Raise an exception if all retries fail
-    raise Exception("Gemini API request failed after retries")
+                if now - window_start >= REQUEST_WINDOW:
+                    logger.debug("Resetting local rate-limit counters")
+                    window_start = now
+                    request_count = 0
+                if request_count >= REQUEST_LIMIT:
+                    sleep_time = REQUEST_WINDOW - (now - window_start)
+                    logger.info(f"Local rate limit reached (count: {request_count}). Sleeping for {sleep_time} seconds...")
+                    time.sleep(sleep_time)
+                    window_start = time.time()
+                    request_count = 0
+                else:
+                    logger.debug(f"Local request count: {request_count}/{REQUEST_LIMIT}")
+                request_count += 1
+            # Handling rate-limiting errors 
+            response = requests.post(url, headers=headers, json=payload)
+            logger.info(f"Gemini API response status: {response.status_code}")
+            if response.status_code == 429:
+                with rate_limit_lock:
+                    now = time.time()
+                    remaining = REQUEST_WINDOW - (now - window_start)
+                    if remaining < delay:
+                        remaining = delay
+                    logger.warning(f"API returned 429. Sleeping for {remaining} seconds to respect rate limits (attempt {attempt+1}/{max_retries}).")
+                    time.sleep(remaining)
+                    window_start = time.time()
+                    request_count = 0
+                continue
+            # If the request was successful, will process the response
+            response.raise_for_status()
+            json_response = response.json()
+            logger.info(f"Gemini API response: {json_response}")
+            return json_response
+        # Raise an exception if all retries fail
+        raise Exception("Gemini API request failed after retries")
