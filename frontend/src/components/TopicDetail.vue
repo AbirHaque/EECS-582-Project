@@ -8,9 +8,9 @@
     
     <div v-else class="space-y-8">
       <!-- Hero section with backdrop gradient -->
-      <div class="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-2xl p-6 shadow-sm overflow-hidden">
+      <div class="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-2xl p-6 shadow-sm">
         <div class="absolute right-0 top-0 w-64 h-64 bg-gradient-to-bl from-blue-100 to-purple-100 rounded-full filter blur-3xl opacity-70 -mr-20 -mt-20"></div>
-        <div class="absolute left-0 bottom-0 w-40 h-40 bg-gradient-to-tr from-blue-200 to-indigo-100 rounded-full filter blur-2xl opacity-70 -ml-10 -mb-10"></div>
+        <!-- <div class="absolute left-0 bottom-0 w-40 h-40 bg-gradient-to-tr from-blue-200 to-indigo-100 rounded-full filter blur-2xl opacity-70 -ml-10 -mb-10"></div> -->
         
         <div class="relative">
           <router-link to="/" 
@@ -28,9 +28,41 @@
             <p class="mt-2 text-gray-600">
               Detailed insights and analysis for this trending topic
             </p>
+            
+          </div>
+        </div>
+        <div class="relative overflow-visible">
+          <div class="flex flex-wrap gap-2 mt-4">
+            <div 
+              v-for="([domain, refs]) in Object.entries(references.reduce((acc, ref) => {
+                let d = ref.url.split('/')[2];
+                acc[d] = acc[d] ? acc[d].concat(ref) : [ref];
+                return acc;
+              }, {}))" 
+              :key="domain" 
+              class="relative">
+              <button 
+                @click="openDomain = openDomain === domain ? '' : domain"
+                class="bg-white text-gray-800 px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-100 transition">
+                {{ domain }} {{ refs.length > 1 ? '(' + refs.length + ')' : '' }}
+              </button>
+              <div 
+                v-if="openDomain === domain" 
+                class="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg z-50 transition-transform transform origin-top scale-95">
+                <div 
+                  v-for="ref in refs" 
+                  :key="ref.id" 
+                  class="px-4 py-2 hover:bg-gray-50 break-all">
+                  <a :href="ref.url" target="_blank" class="text-blue-600 hover:underline">
+                    {{ ref.title }}
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+      
       
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-slate-100 border-b border-gray-200 flex justify-between items-center cursor-pointer" @click="toggleSection('insights')">
@@ -240,37 +272,6 @@
         </div>
       </div>
       
-      <!-- References -->
-      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex justify-between items-center cursor-pointer" @click="toggleSection('references')">
-          <div>
-            <h2 class="text-xl font-semibold text-gray-800">References</h2>
-            <p class="text-sm text-gray-600 mt-1">References utilized</p>
-          </div>
-          <div v-if="openSections.references" class="flex items-center">
-            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-              </svg>
-            </div>
-            <svg v-if="openSections.references" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-        
-        <div  v-if="openSections.references" class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-          <div v-for="(reference, index) in references" :key="reference.id" 
-              class="p-5 hover:bg-gray-50 transition-colors relative border-l-4" 
-              :class="[index % 2 === 0 ? 'border-blue-100' : 'border-indigo-100']">
-            <p class="text-gray-800 mb-3 leading-relaxed" href="{{ reference.url }}">{{ reference.url }}</p>
-          </div>
-        </div>
-      </div>
-      
       <!-- Footer -->
       <div class="border-t border-gray-200 pt-4 mt-8">
         <p class="text-center text-sm text-gray-500">
@@ -311,7 +312,8 @@ export default {
         sentiment: true,
         socialMedia: true,
         references: true
-      }
+      },
+      openDomain: ""
     };
   },
   computed: {
