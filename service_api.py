@@ -1,4 +1,4 @@
-from common import app, Ranking, Insight, SocialMediaPost
+from common import app, Ranking, Insight, SocialMediaPost, Article
 import json
 from flask import jsonify
 from datetime import datetime, timedelta
@@ -46,6 +46,17 @@ def get_topic_social_posts(topic_id):
         'views': post.views,
         'likes': post.likes
     } for post in posts])
+
+# Defining an endpoint to fetch references related to a specific topic
+@app.route('/topics/<int:topic_id>/references')
+def get_topic_references(topic_id):
+    references = Article.query.filter_by(topic_id=topic_id).all()
+    return jsonify([{
+        'id': reference.id,
+        'title': reference.title,
+        'url': reference.url
+        # Missing rest of columns, but thats fine for now
+    } for reference in references])
 
 # Defining an endpoint to fetch sentiment analysis for a specific topic
 @app.route('/topics/<int:topic_id>/sentiment')

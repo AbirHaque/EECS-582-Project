@@ -240,6 +240,37 @@
         </div>
       </div>
       
+      <!-- References -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex justify-between items-center cursor-pointer" @click="toggleSection('references')">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">References</h2>
+            <p class="text-sm text-gray-600 mt-1">References utilized</p>
+          </div>
+          <div v-if="openSections.references" class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+            </div>
+            <svg v-if="openSections.references" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+        
+        <div  v-if="openSections.references" class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+          <div v-for="(reference, index) in references" :key="reference.id" 
+              class="p-5 hover:bg-gray-50 transition-colors relative border-l-4" 
+              :class="[index % 2 === 0 ? 'border-blue-100' : 'border-indigo-100']">
+            <p class="text-gray-800 mb-3 leading-relaxed" href="{{ reference.url }}">{{ reference.url }}</p>
+          </div>
+        </div>
+      </div>
+      
       <!-- Footer -->
       <div class="border-t border-gray-200 pt-4 mt-8">
         <p class="text-center text-sm text-gray-500">
@@ -260,6 +291,7 @@ export default {
       topic: null, // Stores the current topic object
       insights: [], // Stores the insights related to this topic
       socialPosts: [], // added to store social media posts
+      references: [], // added to store references
       sentimentData: null, // Stores sentiment analysis data
       loading: true, // Controls loading state visibility
       sentimentColors: {
@@ -277,7 +309,8 @@ export default {
       openSections: {
         insights: true,
         sentiment: true,
-        socialMedia: true
+        socialMedia: true,
+        references: true
       }
     };
   },
@@ -407,6 +440,17 @@ export default {
       })
       .catch(error => {
         console.error('Error fetching social media posts:', error);
+      });
+
+      
+    // Fetch references
+    axios.get(`http://localhost:5000/topics/${topicId}/references`)
+      .then(response => {
+        this.references = response.data;
+        console.error(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching references:', error);
       });
       
     // Fetch sentiment analysis
