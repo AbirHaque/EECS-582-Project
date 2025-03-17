@@ -2,6 +2,9 @@ from common import app, Ranking, Insight, SocialMediaPost, Article
 import json
 from flask import jsonify
 from datetime import datetime, timedelta
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
 
 # Defining an endpoint to retrieve the latest ranking of topics
 @app.route('/topics')
@@ -76,6 +79,15 @@ def get_topic_sentiment(topic_id):
     else:
         return jsonify({'error': 'No sentiment analysis available for this topic'}), 404
 
+# Function to generate key phrases of text
+@app.route('/keyphrases/<text>')
+def generate_key_phrases(text):
+    nlp_text = nlp(text)
+    key_phrases = [chunk.text for chunk in nlp_text.noun_chunks]
+    return key_phrases[:5]
+    #return jsonify([{'type': insight.insight_type, 'content': insight.content} for insight in insights])
+
 # Running the Flask application if this script is executed directly
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=True
+    )
