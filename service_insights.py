@@ -5,14 +5,6 @@ import threading
 from gemini_client import generate_content
 from message_bus import insights_queue
 
-nlp = None
-
-# Function to generate key phrases of text
-def generate_key_phrases(text):
-    nlp_text = nlp(text)
-    key_phrases = [chunk.text for chunk in nlp_text.noun_chunks]
-    return key_phrases[:5]
-
 # Function to analyze sentiment of social media posts
 def analyze_sentiment_for_topic(topic_id):
     try:
@@ -161,7 +153,6 @@ def generate_fallback_sentiment(topic_id):
 # This function continuously listens to the insights queue and generates summaries for topics based on newly created rankings
 def generate_insights():
     logger.info("Insights generation service started.")
-    nlp = spacy.load("en_core_web_sm")
     while True:
         message = insights_queue.get()
         logger.info(f"Received message in generate_insights: {message}")
