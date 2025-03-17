@@ -49,4 +49,4 @@ Ensure that the `.env` file is not committed (already added to .gitignore).
 - Communication between services is managed via the custom message bus defined in message_bus.py.
 - Each service operates on its own thread for concurrent processing.
 - Logging is enabled for tracking operations and errors throughout the application.
-
+- You need to install en_core_web_sm from spacy `python -m spacy download en_core_web_sm`
