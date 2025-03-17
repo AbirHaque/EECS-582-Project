@@ -84,7 +84,7 @@ def get_topic_sentiment(topic_id):
 def generate_key_phrases(text):
     nlp_text = nlp(text)
     key_phrases = [chunk.text for chunk in nlp_text.noun_chunks]
-    return key_phrases[:5]
+    return key_phrases[:10]
     #return jsonify([{'type': insight.insight_type, 'content': insight.content} for insight in insights])
 
 # Running the Flask application if this script is executed directly

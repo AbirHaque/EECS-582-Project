@@ -82,31 +82,34 @@
           </div>
         </div>
         <div v-if="openSections.insights" class="p-6 grid grid-cols-1 lg:grid-cols-1 gap-8">
-          <!-- Summary Insight -->
-          <div v-if="latestSummary" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-100">
-            <div class="flex gap-4 cursor-pointer" @click="toggleSection('insights_summary')">
-              <div class="flex-shrink-0">
-                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div class="flex items-center">
-                <h2 class="text-xl font-semibold text-gray-800 justify-center">Summary</h2>
-                  <svg v-if="openSections.insights_summary" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                  </svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
+        <!-- Summary Insight -->
+        <div v-if="latestSummary" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-100">
+          <div class="flex gap-4 cursor-pointer" @click="toggleSection('insights_summary')">
+            <div class="flex-shrink-0">
+              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
             </div>
-
-            <div v-if="openSections.insights_summary" class="p-6">
-              <div class="leading-relaxed">{{ latestSummary.content }}</div>
+            <div class="flex items-center">
+              <h2 class="text-xl font-semibold text-gray-800 justify-center">Summary</h2>
+              <svg v-if="openSections.insights_summary" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
+
+          <div v-if="openSections.insights_summary" class="p-6">
+            <!-- Render the highlighted summary -->
+            <div class="leading-relaxed" v-html="highlightedSummary"></div>
+          </div>
+        </div>
+
+
           <div v-else class="flex flex-col items-center justify-center py-10 text-gray-500 bg-gray-50 rounded-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -289,75 +292,76 @@ export default {
   name: "TopicDetail",
   data() {
     return {
-      topic: null, // Stores the current topic object
-      insights: [], // Stores the insights related to this topic
-      socialPosts: [], // added to store social media posts
-      references: [], // added to store references
-      sentimentData: null, // Stores sentiment analysis data
-      loading: true, // Controls loading state visibility
+      topic: null,
+      insights: [],
+      socialPosts: [],
+      references: [],
+      sentimentData: null,
+      loading: true,
       sentimentColors: {
-        'Positive': '#4CAF50', // Green
-        'Negative': '#F44336', // Red
-        'Neutral': '#9E9E9E'  // Gray
+        'Positive': '#4CAF50',
+        'Negative': '#F44336',
+        'Neutral': '#9E9E9E'
       },
       emotionColors: {
-        'Joy': '#FFEB3B',      // Yellow
-        'Anger': '#F44336',    // Red
-        'Sadness': '#3F51B5',  // Indigo
-        'Fear': '#673AB7',     // Deep Purple
-        'Surprise': '#00BCD4'  // Cyan
+        'Joy': '#FFEB3B',
+        'Anger': '#F44336',
+        'Sadness': '#3F51B5',
+        'Fear': '#673AB7',
+        'Surprise': '#00BCD4'
       },
       openSections: {
         insights: true,
         sentiment: true,
         socialMedia: true,
-        references: true
+        references: true,
+        insights_summary: true,
+        insights_personal: true
       },
-      openDomain: ""
+      openDomain: "",
+      summaryKeyphrases: []  // stores the keyphrases for the summary text
     };
   },
   computed: {
-    // Computed property that returns the most recent summary insight
     latestSummary() {
       const summaries = this.insights.filter(i => i.type === 'summary');
       return summaries.length ? summaries[summaries.length - 1] : null;
     },
-    // Computed property that returns the most recent personal insight
     latestPersonal() {
       const personalInsights = this.insights.filter(i => i.type === 'personal');
       return personalInsights.length ? personalInsights[personalInsights.length - 1] : null;
     },
-    // Computed property that returns only sentiments with values > 0
     filteredSentiments() {
       if (!this.sentimentData || !this.sentimentData.sentiments) return {};
-      
-      // Filter out sentiments with 0 values
       const result = {};
       Object.entries(this.sentimentData.sentiments).forEach(([sentiment, value]) => {
         if (value > 0) {
           result[sentiment] = value;
         }
       });
-      
       return result;
     },
-    // Computed property that returns only emotions with values > 0
     filteredEmotions() {
       if (!this.sentimentData || !this.sentimentData.emotions) return {};
-      
-      // Filter out emotions with 0 values
       const result = {};
       Object.entries(this.sentimentData.emotions).forEach(([emotion, value]) => {
         if (value > 0) {
           result[emotion] = value;
         }
       });
-      
       return result;
+    },
+    highlightedSummary() {
+        let summaryText = this.latestSummary && this.latestSummary.content ? this.latestSummary.content : '';
+        // Wrap all keyphrases in a span with Tailwind utility classes.
+        this.summaryKeyphrases.forEach(phrase => {
+          const regex = new RegExp(`(${this.escapeRegExp(phrase)})`, 'gi');
+          summaryText = summaryText.replace(regex, '<span class="bg-blue-200 px-1 rounded">$1</span>');
+        });
+        return summaryText;
     }
   },
   methods: {
-    // Format post timestamp to readable format
     formatPostTime(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString('en-US', { 
@@ -367,8 +371,6 @@ export default {
         minute: '2-digit'
       });
     },
-    
-    // Get text color class based on sentiment
     getSentimentTextColor(sentiment) {
       switch(sentiment) {
         case 'Positive': return 'text-green-700';
@@ -377,8 +379,6 @@ export default {
         default: return 'text-gray-700';
       }
     },
-    
-    // Get dot color class based on sentiment
     getSentimentDotColor(sentiment) {
       switch(sentiment) {
         case 'Positive': return 'bg-green-500';
@@ -387,8 +387,6 @@ export default {
         default: return 'bg-gray-500';
       }
     },
-    
-    // Get text color class based on emotion
     getEmotionTextColor(emotion) {
       switch(emotion) {
         case 'Joy': return 'text-yellow-700';
@@ -399,8 +397,6 @@ export default {
         default: return 'text-gray-700';
       }
     },
-    
-    // Get dot color class based on emotion
     getEmotionDotColor(emotion) {
       switch(emotion) {
         case 'Joy': return 'bg-yellow-500';
@@ -414,11 +410,27 @@ export default {
     toggleSection(section) {
       this.openSections[section] = !this.openSections[section];
     },
+    escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+  },
+  watch: {
+    latestSummary(newSummary) {
+      if (newSummary && newSummary.content) {
+        // Fetch keyphrases for the summary text.
+        const encodedText = encodeURIComponent(newSummary.content);
+        axios.get(`http://localhost:5000/keyphrases/${encodedText}`)
+          .then(response => {
+            this.summaryKeyphrases = response.data;
+          })
+          .catch(error => {
+            console.error('Error fetching keyphrases:', error);
+          });
+      }
+    }
   },
   created() {
-    // Extract the topic ID from the route parameters
     const topicId = this.$route.params.id;
-    // Fetch topic details and insights from the API
     axios.get(`http://localhost:5000/topics/${topicId}`)
       .then(response => {
         if (Array.isArray(response.data)) {
@@ -435,7 +447,6 @@ export default {
       .finally(() => {
         this.loading = false;
       });
-    // Fetch social media posts
     axios.get(`http://localhost:5000/topics/${topicId}/social`)
       .then(response => {
         this.socialPosts = response.data;
@@ -443,9 +454,6 @@ export default {
       .catch(error => {
         console.error('Error fetching social media posts:', error);
       });
-
-      
-    // Fetch references
     axios.get(`http://localhost:5000/topics/${topicId}/references`)
       .then(response => {
         this.references = response.data;
@@ -454,8 +462,6 @@ export default {
       .catch(error => {
         console.error('Error fetching references:', error);
       });
-      
-    // Fetch sentiment analysis
     axios.get(`http://localhost:5000/topics/${topicId}/sentiment`)
       .then(response => {
         if (response.data && response.data.sentiment) {
@@ -468,3 +474,11 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.highlight {
+  background-color: #fffd54;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+</style>
