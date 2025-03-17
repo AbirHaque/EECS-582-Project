@@ -353,9 +353,8 @@ export default {
     },
     highlightedSummary() {
         let summaryText = this.latestSummary && this.latestSummary.content ? this.latestSummary.content : '';
-        // Wrap all keyphrases in a span with Tailwind utility classes.
         this.summaryKeyphrases.forEach(phrase => {
-          const regex = new RegExp(`(${this.escapeRegExp(phrase)})`, 'gi');
+          const regex = new RegExp(`\\b(${this.escapeRegExp(phrase)})\\b`, 'gi');
           summaryText = summaryText.replace(regex, '<span class="bg-blue-200 px-1 rounded">$1</span>');
         });
         return summaryText;
