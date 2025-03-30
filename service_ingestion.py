@@ -63,7 +63,7 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
     def ingest(self):
         articles = []
         sources = ['al-jazeera-english', 'associated-press', 'bbc-news', 'cnn']
-        num_articles = 50
+        num_articles = 100
         url = (f'https://newsapi.org/v2/everything?apiKey={self.api_key}&sortBy=popularity&pageSize={num_articles}&sources={",".join(sources)}')
         response = requests.get(url).json()
 
@@ -71,6 +71,7 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
             raise RuntimeError("News API call failed")
         
         for art_num, article in enumerate(response['articles']):
+            #print(article)
             print(f"Processing news api article {art_num+1} out of {num_articles}")
             if article['content'] is None: # logic should probably be moved to pre-processing phase
                 print("Found empty article, skipping...")
@@ -91,7 +92,8 @@ class NewsAPIIngestionStrategy(IngestionStrategy):
                 url = article['url'],
                 content = art.text,
                 published_at = datetime.strptime(article['publishedAt'], "%Y-%m-%dT%H:%M:%SZ"),
-                processed = False
+                processed = False,
+                multimedia  = article['urlToImage']
             )
             articles.append(ingested_article)
         return articles

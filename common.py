@@ -30,6 +30,7 @@ class Article(db.Model):
     content = db.Column(db.Text)
     processed = db.Column(db.Boolean, default=False)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
+    multimedia = db.Column(db.Text)
 
 # Defining the Topic model (table) to store topics/categories of articles
 class Topic(db.Model):

@@ -88,6 +88,20 @@ def analyze_sentiment_for_topic(topic_id):
     except Exception as e:
         logger.error(f"Error in sentiment analysis for topic {topic_id}: {e}")
 
+def generate_multimedia(topic_id):
+    topic_articles = Article.query.filter(Article.topic_id == topic_id).all()
+    for article in topic_articles:
+        if article.multimedia is not None and type(article.multimedia) == str:
+            insight = Insight(
+                topic_id=topic_id,
+                content=article.multimedia,
+                insight_type='multimedia'
+            )
+            db.session.add(insight)
+            db.session.commit()
+            logger.info(f"Gen multimedia insight for topic id {topic_id}")
+            break
+
 # Generate fallback sentiment data when API fails
 def generate_fallback_sentiment(topic_id):
     # Create a more realistic fallback based on the topic
@@ -203,6 +217,7 @@ def generate_insights():
                         db.session.commit()
                         logger.info(f"Personal insight generated for topic {topic.id}: {insight.id}")
 
+                        generate_multimedia(topic.id)
                         
                         # After generating the summary, also generate sentiment analysis
                         analyze_sentiment_for_topic(topic.id)

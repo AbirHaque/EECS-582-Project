@@ -153,8 +153,53 @@
             <p class="font-medium">No personal insights available for this topic yet.</p>
             <p class="text-sm mt-1">Our system is continuously analyzing new data.</p>
           </div>
+
+          <!-- Multimedia Insight -->
+          <div v-if="latestMultimedia" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-100">
+            <div class="flex gap-4 cursor-pointer" @click="toggleSection('insights_multimedia')">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
+                  <svg class="h-7 w-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <path d="M21 15l-5-5L5 21"></path>
+                  </svg>
+
+                </div>
+              </div>
+              <div class="flex items-center">
+                <h2 class="text-xl font-semibold text-gray-800 justify-center">Multimedia</h2>
+                  <svg v-if="openSections.insights_multimedia" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+              </div>
+            </div>
+
+            <div v-if="openSections.insights_multimedia" class="p-6">
+              <div class="flex items-center justify-center min-h-screen bg-gray-100">
+                    <img 
+                      :src=latestMultimedia.content
+                      alt="Multimedia" 
+                      
+                    />
+                  </div>
+              <!-- <div class="leading-relaxed">{{ latestMultimedia.content }}</div> -->
+            </div>
+          </div>
+          <div v-else class="flex flex-col items-center justify-center py-10 text-gray-500 bg-gray-50 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <p class="font-medium">No multimedia insights available for this topic yet.</p>
+            <p class="text-sm mt-1">Our system is continuously analyzing new data.</p>
+          </div>
         </div>
       </div>
+
+
       
       <!-- Sentiment Analysis -->
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -316,7 +361,8 @@ export default {
         socialMedia: true,
         references: true,
         insights_summary: true,
-        insights_personal: true
+        insights_personal: true,
+        insights_multimedia: true
       },
       openDomain: "",
       summaryKeyphrases: []  // stores the keyphrases for the summary text
@@ -329,6 +375,10 @@ export default {
     },
     latestPersonal() {
       const personalInsights = this.insights.filter(i => i.type === 'personal');
+      return personalInsights.length ? personalInsights[personalInsights.length - 1] : null;
+    },
+    latestMultimedia(){
+      const personalInsights = this.insights.filter(i => i.type === 'multimedia');
       return personalInsights.length ? personalInsights[personalInsights.length - 1] : null;
     },
     filteredSentiments() {
