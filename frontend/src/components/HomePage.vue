@@ -26,6 +26,16 @@
           <div class="px-3 py-1 bg-white bg-opacity-80 text-blue-800 rounded-full font-medium text-sm border border-blue-100 shadow-sm">
             Ranking #{{ currentRankingId }}
           </div>
+          <!-- Next update timer -->
+          <div :class="[updateStatus === 'expected' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-amber-100 text-amber-800 border-amber-200', 'px-3 py-1 rounded-full font-medium text-sm border shadow-sm flex items-center gap-1']">
+            <svg v-if="updateStatus === 'expected'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ updateTimerText }}
+          </div>
           <button @click="toggleRankingHistory" 
                 class="px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-all
                       bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
@@ -246,7 +256,7 @@
     <!-- Footer -->
     <div class="border-t border-gray-200 pt-4 mt-8">
       <p class="text-center text-sm text-gray-500">
-        Data updates automatically every few minutes. Last check: {{ lastUpdateTime }}
+        Data updates automatically every five minutes. {{ updateTimerText }} Last check: {{ lastUpdateTime }}
       </p>
     </div>
   </div>
@@ -269,6 +279,11 @@ const rankingHistory = ref([]);
 const showHistory = ref(false);
 const initialLoad = ref(true);
 const viewMode = ref(localStorage.getItem('topicsViewMode') || 'list');
+
+// Next update timer related data
+const secondsToNextUpdate = ref(0);
+const updateTimerText = ref('');
+const updateStatus = ref('expected'); // 'expected' or 'pending'
 
 const categoryStyles = reactive([
   { borderClass: 'border-red-200', badgeClass: 'bg-red-100 text-red-800', bgClass: 'bg-red-500' },
@@ -344,6 +359,9 @@ const fetchTopics = async () => {
 
     const response = await axios.get('http://localhost:5000/topics');
     console.log("API Response:", response.data);
+    
+    // After fetching topics, update the next update timer info
+    fetchNextUpdateTime();
 
     currentRankingId.value = response.data.ranking_id;
     const currentTopics = response.data.topics;
@@ -439,20 +457,93 @@ const toggleRankingHistory = () => {
   }
 };
 
+// Fetch the next update time information
+const fetchNextUpdateTime = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/rankings/next-update');
+    console.log("Next Update Info:", response.data);
+    
+    secondsToNextUpdate.value = Math.round(response.data.seconds_remaining);
+    updateStatus.value = response.data.update_status;
+    
+    // Update the timer text based on status
+    updateTimerDisplay();
+    
+    // Start the countdown if we have time remaining
+    if (secondsToNextUpdate.value > 0) {
+      startCountdown();
+    }
+  } catch (err) {
+    console.error('Error fetching next update time:', err);
+  }
+};
+
+// Format the time for display
+const formatTimeRemaining = (seconds) => {
+  if (seconds <= 0) return '';
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+// Update the timer display text
+const updateTimerDisplay = () => {
+  if (updateStatus.value === 'expected') {
+    if (secondsToNextUpdate.value > 0) {
+      updateTimerText.value = `Next update in ${formatTimeRemaining(secondsToNextUpdate.value)}`;
+    } else {
+      updateTimerText.value = 'Update scheduled...';
+    }
+  } else {
+    updateTimerText.value = 'Update expected anytime soon...';
+  }
+};
+
+// Start the countdown timer
+const startCountdown = () => {
+  // Clear any existing interval
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  
+  // Set up a new interval that ticks every second
+  countdownInterval = setInterval(() => {
+    if (secondsToNextUpdate.value > 0) {
+      secondsToNextUpdate.value -= 1;
+      updateTimerDisplay();
+    } else {
+      // When timer reaches zero, change status and message
+      updateStatus.value = 'pending';
+      updateTimerDisplay();
+      clearInterval(countdownInterval);
+    }
+  }, 1000);
+};
+
+// Variable declarations for intervals
+let pollInterval, historyPollInterval, updateTimerPollInterval, countdownInterval;
+
 // Lifecycle hooks
 onMounted(() => {
   loadPreviousTopicIds();
   fetchTopics();
-  const pollInterval = setInterval(fetchTopics, 500000);
-  const historyPollInterval = setInterval(() => {
+  pollInterval = setInterval(fetchTopics, 500000);
+  historyPollInterval = setInterval(() => {
     if (showHistory.value) {
       fetchRankingHistory();
     }
   }, 30000);
+  
+  // Also set up a polling interval for the next update time
+  updateTimerPollInterval = setInterval(fetchNextUpdateTime, 60000); // Check once a minute
 
   onBeforeUnmount(() => {
     clearInterval(pollInterval);
     clearInterval(historyPollInterval);
+    clearInterval(updateTimerPollInterval);
+    if (countdownInterval) clearInterval(countdownInterval);
     savePreviousTopicIds();
   });
 });

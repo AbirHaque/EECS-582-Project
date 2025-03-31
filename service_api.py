@@ -3,6 +3,8 @@ import json
 from flask import jsonify
 from datetime import datetime, timedelta
 import spacy
+import time
+from service_ranking import RANK_INTERVAL
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -17,6 +19,31 @@ def get_top_topics():
             'topics': [{'id': topic.id, 'name': topic.name} for topic in latest_ranking.topics]
         })
     return jsonify({})
+
+# Endpoint to get information about the next ranking update
+@app.route('/rankings/next-update')
+def get_next_update_time():
+    latest_ranking = Ranking.query.order_by(Ranking.created_at.desc()).first()
+    if latest_ranking:
+        last_update_time = latest_ranking.created_at
+        next_update_time = last_update_time + timedelta(seconds=RANK_INTERVAL)
+        current_time = datetime.utcnow()
+        
+        # Calculate seconds remaining
+        seconds_remaining = (next_update_time - current_time).total_seconds()
+        
+        # If the update is already past due, return a status indicating it
+        update_status = "expected" if seconds_remaining > 0 else "pending"
+        
+        return jsonify({
+            'last_update': last_update_time.isoformat(),
+            'next_update': next_update_time.isoformat(),
+            'seconds_remaining': max(0, seconds_remaining),
+            'update_status': update_status
+        })
+    return jsonify({
+        'error': 'No previous ranking found'
+    }), 404
 
 # Defining an endpoint to retrieve ranking history from the last hour
 @app.route('/rankings/history')
