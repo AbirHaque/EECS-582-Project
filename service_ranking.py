@@ -1,4 +1,4 @@
-from common import app, db, logger, Topic, Ranking, RankingsTopics, SocialMediaPost, Article
+from common import app, db, logger, Topic, Ranking, RankingsTopics, SocialMediaPost, Article, Insight
 import threading, requests
 from datetime import datetime, timezone, timedelta
 from message_bus import ranking_queue, social_queue, send_message
@@ -173,12 +173,24 @@ def ingest_social():
                             'https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts',
                             params={'q': search_query, 'sort': 'top', 'since': two_days_ago, 'limit': 25}
                         )
+                        hashtags = []
                         if response.status_code == 200:
                             posts = response.json().get('posts', [])
                             for post in posts:
                                 record = post.get('record', {})
                                 content = record.get('text', '')
                                 created_at_str = record.get('createdAt')
+
+                                facets = record.get('facets', [])
+                                for facet in facets:
+                                    feature = facet['features'][0]
+                                    if feature['$type'] == 'app.bsky.richtext.facet#tag' and 'tag' in feature:
+                                        hashtag = feature['tag']
+                                        hashtags.append(hashtag)
+                                # print()
+                                # print(post)
+                                # print()
+                                print("Hashtags:" , hashtags, content)
                                 try:
                                     if created_at_str:
                                         # Truncate microseconds to 6 digits and ensure proper format
@@ -216,6 +228,14 @@ def ingest_social():
                             logger.info(f"Ingested social media posts for topic: {topic.name}")
                         else:
                             logger.error(f"Failed to fetch posts for topic '{search_query}': {response.status_code}")
+                        
+                        if len(hashtags) > 0:
+                            hashtags = list(set(hashtags))
+                            insight_content = ', '.join(['#' + k for k in hashtags])
+                            hashtags_insight = Insight(topic_id=topic.id, insight_type='hashtags', content=insight_content)
+                            db.session.add(hashtags_insight)
+                            db.session.commit()
+                            logger.info(f"Added hashtags insight {insight_content} for topic {topic.id}")
                 except Exception as e:
                     logger.error(f"Error processing social media posts: {e}")
                     db.session.rollback()

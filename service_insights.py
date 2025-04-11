@@ -4,6 +4,9 @@ import random
 import threading
 from gemini_client import generate_content
 from message_bus import insights_queue
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
 
 # Function to analyze sentiment of social media posts
 def analyze_sentiment_for_topic(topic_id):
@@ -91,6 +94,19 @@ def analyze_sentiment_for_topic(topic_id):
 def generate_multimedia(topic_id):
     topic_articles = Article.query.filter(Article.topic_id == topic_id).all()
     for article in topic_articles:
+        doc = nlp(article.content)
+        locations = [ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC", "FAC")]
+        if (len(locations) > 0):
+            logger.info(f"Locations found {locations}")
+            insight = Insight(
+                topic_id=topic_id,
+                content=locations[0],
+                insight_type='multimedia_location'
+            )
+            db.session.add(insight)
+            db.session.commit()
+            logger.info(f"Generated location multimedia insight for topic id {topic_id}")
+
         if article.multimedia is not None and type(article.multimedia) == str:
             insight = Insight(
                 topic_id=topic_id,
@@ -99,7 +115,7 @@ def generate_multimedia(topic_id):
             )
             db.session.add(insight)
             db.session.commit()
-            logger.info(f"Gen multimedia insight for topic id {topic_id}")
+            logger.info(f"Generated image multimedia insight for topic id {topic_id}")
             break
 
 # Generate fallback sentiment data when API fails
@@ -216,6 +232,22 @@ def generate_insights():
                         db.session.add(insight)
                         db.session.commit()
                         logger.info(f"Personal insight generated for topic {topic.id}: {insight.id}")
+
+                        prompt_background = f"Provide additional background on the articles given below that could help a reader not familiar with the topic get crucial contextual information.\n{prompt_content}"
+                        api_response = generate_content(prompt_background)
+                        logger.info(f"Received API response: {api_response}")
+                        candidate = api_response.get("candidates", [{}])[0]
+                        content = candidate.get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                        if not content:
+                            logger.warning(f"No content received for topic {topic.id} - API response: {api_response}")
+                        insight = Insight(
+                            topic_id=topic.id,
+                            content=content,
+                            insight_type='background'
+                        )
+                        db.session.add(insight)
+                        db.session.commit()
+                        logger.info(f"Background insight generated for topic {topic.id}: {insight.id}")
 
                         generate_multimedia(topic.id)
                         
