@@ -71,8 +71,22 @@ def create_new_ranking(topics):
         # Calculate scores and sort topics
         topic_scores = []
         current_time = datetime.now(timezone.utc)
+        
+        # Filter topics to only include those with articles
+        topics_with_articles = []
         for topic in topics:
-            
+            article_count = db.session.query(Article.id).filter_by(topic_id=topic.id).count()
+            if article_count > 0:
+                topics_with_articles.append(topic)
+        
+        if not topics_with_articles:
+            logger.warning("No topics with articles found for ranking")
+            # Fall back to all topics if none have articles
+            topics_with_articles = topics
+        
+        logger.info(f"Ranking {len(topics_with_articles)} topics with articles out of {len(topics)} total topics")
+        
+        for topic in topics_with_articles:
             score = calculate_topic_score(topic, current_time)
             topic_scores.append((topic, score))
         

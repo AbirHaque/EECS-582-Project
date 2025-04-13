@@ -12,6 +12,7 @@ import service_ingestion
 import service_ranking
 import service_insights
 import service_api
+import service_diversity
 import sys
 
 # Checks if the database file exists; if not, initialize the database
@@ -37,6 +38,13 @@ def start_ingest_social():
 # Function to start the insights generation service
 def start_generate_insights():
     service_insights.generate_insights()
+    
+# Function to initialize source diversity scores
+def initialize_diversity_scores():
+    # Calculate diversity scores for topics in the latest ranking
+    with app.app_context():
+        service_diversity.update_ranked_topics_diversity()
+        logger.info("Source diversity scores initialized for ranked topics")
 
 if __name__ == '__main__':
     # Check for demo mode flag
@@ -50,6 +58,7 @@ if __name__ == '__main__':
         threading.Thread(target=start_rank_topics, daemon=True).start()
         threading.Thread(target=start_ingest_social, daemon=True).start()
         threading.Thread(target=start_generate_insights, daemon=True).start()
+        threading.Thread(target=initialize_diversity_scores, daemon=True).start()
 
         print("API service running at http://localhost:5000")
         service_api.app.run(host='0.0.0.0', debug=True)

@@ -310,6 +310,100 @@
 
 
       
+      <!-- Source Diversity Score -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
+        <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 flex justify-between items-center cursor-pointer" @click="toggleSection('diversity')">
+          <h2 class="text-xl font-semibold text-gray-800">Source Diversity Score</h2>
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <svg v-if="openSections.diversity" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+        <div v-if="openSections.diversity" class="p-6">
+          <div v-if="diversityData" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Main Score -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center col-span-1">
+              <div class="text-6xl font-bold" 
+                :class="{
+                  'text-red-600': diversityData.score < 33,
+                  'text-yellow-500': diversityData.score >= 33 && diversityData.score < 66,
+                  'text-green-600': diversityData.score >= 66
+                }">
+                {{ diversityData.score }}
+              </div>
+              <div class="mt-2 text-gray-600 text-sm">Diversity Score</div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                <div class="h-2.5 rounded-full" 
+                  :style="{ width: diversityData.score + '%' }" 
+                  :class="{
+                    'bg-red-600': diversityData.score < 33,
+                    'bg-yellow-500': diversityData.score >= 33 && diversityData.score < 66,
+                    'bg-green-600': diversityData.score >= 66
+                  }">
+                </div>
+              </div>
+              <div class="text-xs text-gray-500 mt-2 text-center">
+                <span v-if="diversityData.score < 33">Low diversity: Limited range of sources</span>
+                <span v-else-if="diversityData.score < 66">Moderate diversity: Some variety in sources</span>
+                <span v-else>High diversity: Wide variety of sources</span>
+              </div>
+            </div>
+            
+            <!-- Metrics -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 col-span-2">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Source Metrics</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="border rounded p-3 bg-gray-50">
+                  <div class="text-sm text-gray-500">Unique Sources</div>
+                  <div class="text-xl font-semibold">{{ diversityData.metrics.domain_count }}</div>
+                </div>
+                <div class="border rounded p-3 bg-gray-50">
+                  <div class="text-sm text-gray-500">Total Articles</div>
+                  <div class="text-xl font-semibold">{{ diversityData.metrics.total_articles }}</div>
+                </div>
+                <div class="border rounded p-3 bg-gray-50">
+                  <div class="text-sm text-gray-500">Source Distribution</div>
+                  <div class="text-xl font-semibold">{{ Math.round(diversityData.metrics.domain_distribution * 100) }}%</div>
+                </div>
+                <div class="border rounded p-3 bg-gray-50">
+                  <div class="text-sm text-gray-500">Content Diversity</div>
+                  <div class="text-xl font-semibold">{{ Math.round(diversityData.metrics.content_diversity * 100) }}%</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Source Breakdown -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 col-span-3">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Source Breakdown</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div v-for="domain in diversityData.domains" :key="domain.domain" 
+                    class="border rounded p-3 flex justify-between items-center">
+                  <div class="font-medium text-gray-800 truncate" :title="domain.domain">{{ domain.domain }}</div>
+                  <div class="bg-gray-200 rounded-full px-2 py-1 text-xs font-medium">{{ domain.count }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="flex flex-col items-center justify-center py-10 text-gray-500 bg-gray-50 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <p class="font-medium">No source diversity data available for this topic yet.</p>
+            <p class="text-sm mt-1">Our system is continuously analyzing the sources.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Sentiment Analysis -->
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-200 flex justify-between items-center cursor-pointer" @click="toggleSection('sentiment')">
@@ -488,6 +582,7 @@ export default {
       socialPosts: [],
       references: [],
       sentimentData: null,
+      diversityData: null,
       loading: true,
       sentimentColors: {
         'Positive': '#4CAF50',
@@ -506,6 +601,7 @@ export default {
         sentiment: true,
         socialMedia: true,
         references: true,
+        diversity: true,
         insights_summary: true,
         insights_personal: true,
         insights_multimedia: true,
@@ -705,6 +801,16 @@ export default {
       })
       .catch(error => {
         console.error('Error fetching sentiment analysis:', error);
+      });
+
+    axios.get(`http://localhost:5000/topics/${topicId}/diversity`)
+      .then(response => {
+        if (response.data && response.data.diversity) {
+          this.diversityData = response.data.diversity;
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching source diversity:', error);
       });
   }
 };

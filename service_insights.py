@@ -5,6 +5,7 @@ import threading
 from gemini_client import generate_content
 from message_bus import insights_queue
 import spacy
+from service_diversity import calculate_diversity_score, update_ranked_topics_diversity
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -253,6 +254,12 @@ def generate_insights():
                         
                         # After generating the summary, also generate sentiment analysis
                         analyze_sentiment_for_topic(topic.id)
+                        
+                        # Calculate source diversity score for individual topic
+                        calculate_diversity_score(topic.id)
+                    
+                    # After processing all topics, log completion
+                    logger.info(f"Finished generating insights for all topics in ranking {ranking_id}")
                 except Exception as e:
                     logger.error(f"Error generating insights: {e}")
         insights_queue.task_done()
