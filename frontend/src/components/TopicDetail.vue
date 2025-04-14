@@ -29,6 +29,7 @@
             <p class="mt-2 text-gray-600">
               Detailed insights and analysis for this trending topic
             </p>
+             <span class="text-sm text-gray-500">{{ updateTrendingTime(new Date(topic_created_at).getTime())}}</span>
             
           </div>
         </div>
@@ -693,6 +694,13 @@ export default {
     }
   },
   methods: {
+    updateTrendingTime(timestamp) {
+      const cur=new Date();
+      const diff=Math.floor((cur-timestamp)/1000);
+      const h = Math.floor((diff / 3600)%24);
+      const m = Math.floor((diff / 60)%60);
+      return `Trending for  ${h} hours ${m} minutes`;
+    },
     formatPostTime(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString('en-US', { 
@@ -771,6 +779,17 @@ export default {
           this.topic = response.data.topic || response.data;
           this.insights = response.data.insights ?? [];
         }
+        this.topicId=topicId;
+      })
+      .catch(error => {
+        console.error('Error fetching topic details:', error);
+      })
+      .finally(() => {
+        this.loading = false;
+      });
+    axios.get(`http://localhost:5000/topics`)
+      .then(response => {
+        this.topic_created_at = response.data.topics[topicId].created_at;
       })
       .catch(error => {
         console.error('Error fetching topic details:', error);

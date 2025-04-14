@@ -17,7 +17,7 @@ def get_top_topics():
         return jsonify({
             'ranking_id': latest_ranking.id,
             'created_at': latest_ranking.created_at.isoformat(),
-            'topics': [{'id': topic.id, 'name': topic.name} for topic in latest_ranking.topics]
+            'topics': [{'id': topic.id, 'name': topic.name, 'created_at': topic.created_at} for topic in latest_ranking.topics]
         })
     return jsonify({})
 
@@ -57,7 +57,7 @@ def get_ranking_history():
         'id': ranking.id,
         'created_at': ranking.created_at.isoformat(),
         'topic_count': len(ranking.topics),
-        'topics': [{'id': topic.id, 'name': topic.name} for topic in ranking.topics]
+        'topics': [{'id': topic.id, 'name': topic.name, 'created_at': topic.created_at} for topic in ranking.topics]
     } for ranking in rankings])
 
 # Defining an endpoint to fetch insights related to a specific topi
