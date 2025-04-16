@@ -14,14 +14,26 @@
         <!-- <div class="absolute left-0 bottom-0 w-40 h-40 bg-gradient-to-tr from-blue-200 to-indigo-100 rounded-full filter blur-2xl opacity-70 -ml-10 -mb-10"></div> -->
         
         <div class="relative">
-          <router-link to="/" 
-                     class="inline-flex items-center gap-2 text-blue-600 font-medium mb-3 group">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Topics
-          </router-link>
-          
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <router-link to="/" 
+                           class="inline-flex items-center gap-2 text-blue-600 font-medium group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Topics
+              </router-link>
+            </div>
+            <!-- Save Insight Button -->
+            <button @click="saveInsightData"
+                    class="bg-transparent border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Save Insight
+            </button>
+          </div>
+
           <div class="mt-3">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-800">
               {{ topic.name }}
@@ -573,12 +585,15 @@ import { ref, onMounted, nextTick } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import axios from 'axios';
+import { saveAs } from 'file-saver';
 
 export default {
   name: "TopicDetail",
   data() {
     return {
       topic: null,
+      topicId: null,
+      topic_created_at: null,
       insights: [],
       socialPosts: [],
       references: [],
@@ -751,6 +766,37 @@ export default {
     },
     escapeRegExp(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    },
+    saveInsightData() {
+      const insightData = {
+        topicId: this.topicId,
+        topicName: this.topic?.name,
+        topicCreatedAt: this.topic_created_at,
+        savedAt: new Date().toISOString(),
+        insights: this.insights,
+        socialPosts: this.socialPosts,
+        references: this.references,
+        sentimentData: this.sentimentData,
+        diversityData: this.diversityData,
+        // might need to add bias score
+      };
+
+      try {
+        const jsonData = JSON.stringify(insightData, null, 2);
+        const storageKey = `savedInsightData_${this.topicId}`;
+        const fileName = `insite_topic_${this.topicId}_${Date.now()}.json`;
+
+        localStorage.setItem(storageKey, jsonData);
+        console.log(`Insight data for topic ${this.topicId} saved to local storage under key: ${storageKey}`);
+        alert(`Insight data saved to browser's local storage.`);
+
+        const blob = new Blob([jsonData], { type: 'application/json;charset=utf-8' });
+        saveAs(blob, fileName);
+
+      } catch (err) {
+        console.error("Error saving insight data:", err);
+        alert("Failed to save insight data. Check console for details.");
+      }
     }
   },
   watch: {
@@ -770,6 +816,7 @@ export default {
   },
   created() {
     const topicId = this.$route.params.id;
+    this.topicId = topicId;
     axios.get(`http://localhost:5000/topics/${topicId}`)
       .then(response => {
         if (Array.isArray(response.data)) {
@@ -789,7 +836,15 @@ export default {
       });
     axios.get(`http://localhost:5000/topics`)
       .then(response => {
-        this.topic_created_at = response.data.topics[topicId].created_at;
+        const currentTopicData = response.data.topics.find(t => t.id == topicId);
+        if (currentTopicData) {
+            this.topic_created_at = currentTopicData.created_at;
+        } else {
+            console.warn(`Could not find created_at data for topic ID: ${topicId}`);
+            if (response.data.topics[topicId]) {
+                 this.topic_created_at = response.data.topics[topicId].created_at;
+            }
+        }
       })
       .catch(error => {
         console.error('Error fetching topic details:', error);

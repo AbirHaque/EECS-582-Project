@@ -13,6 +13,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.9",
     "axios": "^1.8.1",
+    "file-saver": "^2.0.5",
     "leaflet": "^1.9.4",
     "motion": "^12.4.10",
     "pinia": "^3.0.1",
