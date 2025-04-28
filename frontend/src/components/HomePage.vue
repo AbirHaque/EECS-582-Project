@@ -4,7 +4,7 @@
     <div class="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-2xl p-6 mb-8 shadow-sm overflow-hidden">
       <div class="absolute right-0 top-0 w-64 h-64 bg-gradient-to-bl from-blue-100 to-purple-100 rounded-full filter blur-3xl opacity-70 -mr-20 -mt-20"></div>
       <div class="absolute left-0 bottom-0 w-40 h-40 bg-gradient-to-tr from-blue-200 to-indigo-100 rounded-full filter blur-2xl opacity-70 -ml-10 -mb-10"></div>
-      
+
       <div class="relative">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div>
@@ -46,6 +46,13 @@
             </svg>
             {{ showHistory ? 'Hide History' : 'View History' }}
           </button>
+          <button @click="isSidebarOpen = true"
+                 class="bg-white text-blue-600 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 border border-blue-200 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 12h14M5 16h14" />
+            </svg>
+            View Saved Insights
+         </button>
         </div>
       </div>
     </div>
@@ -259,12 +266,16 @@
         Data updates automatically every five minutes. {{ updateTimerText }} Last check: {{ lastUpdateTime }}
       </p>
     </div>
+
+    <!-- Saved Insights Sidebar -->
+    <SavedInsightsSidebar :isOpen="isSidebarOpen" @close="isSidebarOpen = false" />
   </div>
 </template>
 
 <script setup>
 import axios from 'axios';
 import { ref, reactive, onMounted, onBeforeUnmount, watch, computed } from 'vue';
+import SavedInsightsSidebar from './SavedInsightsSidebar.vue'; // Import the sidebar
 
 // Data
 const topics = ref([]);
@@ -279,6 +290,7 @@ const rankingHistory = ref([]);
 const showHistory = ref(false);
 const initialLoad = ref(true);
 const viewMode = ref(localStorage.getItem('topicsViewMode') || 'list');
+const isSidebarOpen = ref(false); // State for sidebar visibility
 
 // Next update timer related data
 const secondsToNextUpdate = ref(0);
