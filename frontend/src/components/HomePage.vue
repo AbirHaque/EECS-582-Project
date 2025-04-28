@@ -17,7 +17,7 @@
             <span :class="['inline-block w-2 h-2 rounded-full transition-colors', 
                          isUpdating ? 'bg-yellow-400 animate-pulse' : 'bg-green-500']"></span>
             <span class="text-sm font-medium text-gray-600">
-              {{ isUpdating ? 'Refreshing data...' : 'Updated: ' + lastUpdateTime }}
+              {{ isUpdating ? 'Refreshing data ...' : 'Updated: ' + lastUpdateTime }}
             </span>
           </div>
         </div>
